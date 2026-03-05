@@ -6,11 +6,16 @@
 export const formatFacultyName = (faculty, fallback = '') => {
   if (!faculty) return fallback;
   if (typeof faculty === 'string') return faculty; // If it's already a string, return as is
-  
+
   const prefix = faculty.prefix || '';
   const fullName = faculty.fullName || '';
-  
+
   if (!fullName) return fallback;
+
+  // Avoid duplication: if fullName already starts with the prefix, just return fullName
+  if (prefix && fullName.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return fullName;
+  }
   return prefix ? `${prefix} ${fullName}` : fullName;
 };
 
@@ -23,6 +28,11 @@ export const formatFacultyName = (faculty, fallback = '') => {
  */
 export const formatNameWithPrefix = (prefix, fullName, fallback = '') => {
   if (!fullName) return fallback;
+
+  // Avoid duplication: if fullName already starts with the prefix, just return fullName
+  if (prefix && fullName.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return fullName;
+  }
   return prefix ? `${prefix} ${fullName}` : fullName;
 };
 

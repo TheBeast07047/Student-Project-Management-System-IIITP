@@ -65,6 +65,9 @@ import MTechSem3MajorProjectRegister from './pages/student/MTechSem3MajorProject
 import Sem8TrackSelection from './pages/student/Sem8TrackSelection';
 import Sem8Status from './pages/student/Sem8Status';
 import MajorProject2Dashboard from './pages/student/MajorProject2Dashboard';
+import GroupPreferenceSubmission from './pages/student/GroupPreferenceSubmission';
+import FacultyRankingPage from './pages/faculty/FacultyRankingPage';
+import AllocationDashboard from './pages/admin/AllocationDashboard';
 
 function App() {
   return (
@@ -87,7 +90,7 @@ function AppContent() {
   // Protected Route Component
   const ProtectedRoute = ({ children, allowedRoles }) => {
     const { isAuthenticated, userRole, isLoading } = useAuth();
-    
+
     if (isLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -98,22 +101,22 @@ function AppContent() {
         </div>
       );
     }
-    
+
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
-    
+
     if (allowedRoles && !allowedRoles.includes(userRole)) {
       return <Navigate to="/" replace />;
     }
-    
+
     return children;
   };
 
   // Dashboard Route Component
   const DashboardRoute = () => {
     const { userRole } = useAuth();
-    
+
     switch (userRole) {
       case 'student':
         return <Navigate to="/dashboard/student" replace />;
@@ -129,432 +132,456 @@ function AppContent() {
   return (
     <>
       <Toaster
-  position="top-center"
-  containerStyle={{
-    top: '50px', // Adjust this value based on your navbar height
-    left: '50%',
-    transform: 'translateX(-50%)',
-  }}
-  toastOptions={{
-    duration: 4000,
-    style: {
-      background: '#363636',
-      color: '#fff',
-      marginTop: '20px',
-    },
-    success: {
-      duration: 3000,
-      iconTheme: {
-        primary: '#10B981',
-        secondary: '#fff',
-      },
-    },
-    error: {
-      duration: 5000,
-      iconTheme: {
-        primary: '#EF4444',
-        secondary: '#fff',
-      },
-    },
-    loading: {
-      duration: Infinity,
-    },
-  }}
-/>
-      
+        position="top-center"
+        containerStyle={{
+          top: '50px', // Adjust this value based on your navbar height
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            marginTop: '20px',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+          loading: {
+            duration: Infinity,
+          },
+        }}
+      />
+
       <Routes>
         <Route path="/" element={
           <Layout>
             <Home />
           </Layout>
         } />
-          <Route path="/login" element={
+        <Route path="/login" element={
+          <Layout>
+            <Login />
+          </Layout>
+        } />
+        <Route path="/forgot-password" element={
+          <Layout>
+            <ForgotPassword />
+          </Layout>
+        } />
+        <Route path="/reset-password" element={
+          <Layout>
+            <ResetPassword />
+          </Layout>
+        } />
+        <Route path="/signup" element={
+          <Layout>
+            <Signup />
+          </Layout>
+        } />
+        <Route path="/dashboard" element={<DashboardRoute />} />
+        <Route path="/dashboard/student" element={
+          <ProtectedRoute allowedRoles={['student']}>
             <Layout>
-              <Login />
+              <StudentDashboard />
             </Layout>
-          } />
-          <Route path="/forgot-password" element={
+          </ProtectedRoute>
+        } />
+        <Route path="/student/projects/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <ProjectRegistration />
+          </ProtectedRoute>
+        } />
+        {/* M.Tech Sem 1 Registration */}
+        <Route path="/student/mtech/sem1/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MTechSem1Registration />
+          </ProtectedRoute>
+        } />
+        {/* M.Tech Sem 2 Registration */}
+        <Route path="/student/mtech/sem2/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MTechSem2Registration />
+          </ProtectedRoute>
+        } />
+        {/* Old PPTUpload route removed - functionality merged into Sem4ProjectDashboard */}
+        {/* Sem 5 Routes */}
+        <Route path="/student/sem5/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MinorProject2Registration />
+          </ProtectedRoute>
+        } />
+        {/* Gale-Shapley Faculty Preference Submission */}
+        <Route path="/student/allocation/preferences" element={
+          <ProtectedRoute allowedRoles={['student']}>
             <Layout>
-              <ForgotPassword />
+              <GroupPreferenceSubmission />
             </Layout>
-          } />
-          <Route path="/reset-password" element={
-            <Layout>
-              <ResetPassword />
-            </Layout>
-          } />
-          <Route path="/signup" element={
-            <Layout>
-              <Signup />
-            </Layout>
-          } />
-          <Route path="/dashboard" element={<DashboardRoute />} />
-          <Route path="/dashboard/student" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Layout>
-                <StudentDashboard />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/student/projects/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <ProjectRegistration />
-            </ProtectedRoute>
-          } />
-          {/* M.Tech Sem 1 Registration */}
-          <Route path="/student/mtech/sem1/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MTechSem1Registration />
-            </ProtectedRoute>
-          } />
-          {/* M.Tech Sem 2 Registration */}
-          <Route path="/student/mtech/sem2/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MTechSem2Registration />
-            </ProtectedRoute>
-          } />
-          {/* Old PPTUpload route removed - functionality merged into Sem4ProjectDashboard */}
-          {/* Sem 5 Routes */}
-          <Route path="/student/sem5/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MinorProject2Registration />
-            </ProtectedRoute>
-          } />
-          
-          {/* Sem 6 Registration */}
-          <Route path="/student/sem6/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Sem6Registration />
-            </ProtectedRoute>
-          } />
+          </ProtectedRoute>
+        } />
 
-          {/* M.Tech Sem 3 Track Selection */}
-          <Route path="/student/mtech/sem3/track-selection" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MTechSem3TrackSelection />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/mtech/sem3/major-project" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MTechSem3MajorProject />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/mtech/sem3/major-project/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MTechSem3MajorProjectRegister />
-            </ProtectedRoute>
-          } />
-          
-          {/* Sem 7 Routes */}
-          <Route path="/student/sem7/track-selection" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Sem7TrackSelection />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/internship/apply/:type" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <InternshipApplicationForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/internship/apply/:type/:id/edit" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <InternshipApplicationForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/major1/dashboard" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MajorProject1Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/major1/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MajorProject1Registration />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/internship1/dashboard" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Internship1Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem7/internship1/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Internship1Registration />
-            </ProtectedRoute>
-          } />
-          
-          {/* Sem 8 Routes */}
-          <Route path="/student/sem8/track-selection" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Sem8TrackSelection />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/status" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Sem8Status />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/internship/apply/:type" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <InternshipApplicationForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/internship/apply/:type/:id/edit" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <InternshipApplicationForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/major2/dashboard" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MajorProject2Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/major2/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <MajorProject1Registration />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/internship2/dashboard" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Internship1Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem8/internship2/register" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Internship1Registration />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/student/groups/create" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <GroupFormation />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/groups/:id/dashboard" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <GroupDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/sem5/project" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <ProjectDetails />
-            </ProtectedRoute>
-          } />
-          <Route path="/student/profile" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Layout>
-                <StudentProfile />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/student/projects/sem4/:projectId" element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <Sem4ProjectDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/faculty" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <Layout>
-                <FacultyDashboard />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/faculty/evaluations" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <EvaluationInterface />
-            </ProtectedRoute>
-          } />
-          <Route path="/faculty/evaluations/:id" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <EvaluationInterface />
-            </ProtectedRoute>
-          } />
-          {/* Sem 5 Faculty Routes */}
-          <Route path="/faculty/groups/allocation" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <Layout>
-                <GroupAllocation />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/faculty/groups/allocated" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <Layout>
-                <AllocatedGroups />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/faculty/project" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <ProjectDetails />
-            </ProtectedRoute>
-          } />
-          <Route path="/faculty/profile" element={
-            <ProtectedRoute allowedRoles={['faculty']}>
-              <Layout>
-                <FacultyProfile />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <AdminDashboard />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/manage-faculty" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <ManageFaculty />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/manage-students" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <ManageStudents />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem4/registrations" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <Sem4RegistrationsTable />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem4/unregistered" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Sem4UnregisteredStudents />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/mtech/sem1/registrations" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <MTechSem1Registrations />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/mtech/sem1/unregistered" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <MTechSem1UnregisteredStudents />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/mtech/sem2/registrations" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <MTechSem2Registrations />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/mtech/sem2/unregistered" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <MTechSem2UnregisteredStudents />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/mtech/sem3/review" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <MTechSem3Review />
-            </ProtectedRoute>
-          } />
-          {/* Redirects to allocated-faculty page - registrations is now a tab there */}
-          <Route path="/admin/sem5/registrations" element={
-            <Navigate to="/admin/sem5/allocated-faculty" replace />
-          } />
-          <Route path="/admin/sem5/allocated-faculty" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <Sem5AllocatedFaculty />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem6/registrations" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <Sem6RegistrationsTable />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem7/review" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Sem7Review />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem7/track-choices" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Sem7TrackFinalization />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem8/review" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Sem8Review />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/sem8/track-choices" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <Sem8TrackFinalization />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/profile" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <AdminProfile />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          {/* Sem 5 Admin Routes */}
-          <Route path="/admin/system-config" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <SystemConfiguration />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/semester-management" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <SemesterManagement />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/manage-projects" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Layout>
-                <ManageProjects />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          {/* Shared Routes - Accessible by all authenticated users */}
-          <Route path="/projects/:projectId" element={
-            <ProtectedRoute allowedRoles={['student', 'faculty', 'admin']}>
-              <ProjectDetails />
-            </ProtectedRoute>
-          } />
-          {/* Demo Routes - Remove in production */}
-          <Route path="/toast-demo" element={
+        {/* Sem 6 Registration */}
+        <Route path="/student/sem6/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Sem6Registration />
+          </ProtectedRoute>
+        } />
+
+        {/* M.Tech Sem 3 Track Selection */}
+        <Route path="/student/mtech/sem3/track-selection" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MTechSem3TrackSelection />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/mtech/sem3/major-project" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MTechSem3MajorProject />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/mtech/sem3/major-project/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MTechSem3MajorProjectRegister />
+          </ProtectedRoute>
+        } />
+
+        {/* Sem 7 Routes */}
+        <Route path="/student/sem7/track-selection" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Sem7TrackSelection />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/internship/apply/:type" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <InternshipApplicationForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/internship/apply/:type/:id/edit" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <InternshipApplicationForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/major1/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MajorProject1Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/major1/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MajorProject1Registration />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/internship1/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Internship1Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem7/internship1/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Internship1Registration />
+          </ProtectedRoute>
+        } />
+
+        {/* Sem 8 Routes */}
+        <Route path="/student/sem8/track-selection" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Sem8TrackSelection />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/status" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Sem8Status />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/internship/apply/:type" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <InternshipApplicationForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/internship/apply/:type/:id/edit" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <InternshipApplicationForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/major2/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MajorProject2Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/major2/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <MajorProject1Registration />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/internship2/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Internship1Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem8/internship2/register" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Internship1Registration />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/student/groups/create" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <GroupFormation />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/groups/:id/dashboard" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <GroupDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/sem5/project" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <ProjectDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/profile" element={
+          <ProtectedRoute allowedRoles={['student']}>
             <Layout>
-              <ToastDemo />
+              <StudentProfile />
             </Layout>
-          } />
-          <Route path="/signup-test-demo" element={
+          </ProtectedRoute>
+        } />
+        <Route path="/student/projects/sem4/:projectId" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <Sem4ProjectDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/faculty" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
             <Layout>
-              <SignupTestDemo />
+              <FacultyDashboard />
             </Layout>
-          } />
-          <Route path="/specific-error-test-demo" element={
+          </ProtectedRoute>
+        } />
+        <Route path="/faculty/evaluations" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
+            <EvaluationInterface />
+          </ProtectedRoute>
+        } />
+        <Route path="/faculty/evaluations/:id" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
+            <EvaluationInterface />
+          </ProtectedRoute>
+        } />
+        {/* Sem 5 Faculty Routes */}
+        <Route path="/faculty/groups/allocation" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
             <Layout>
-              <SpecificErrorTestDemo />
+              <GroupAllocation />
             </Layout>
-          } />
-          <Route path="*" element={
+          </ProtectedRoute>
+        } />
+        <Route path="/faculty/groups/allocated" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
             <Layout>
-              <NotFound />
+              <AllocatedGroups />
             </Layout>
-          } />
+          </ProtectedRoute>
+        } />
+        {/* Gale-Shapley Group Ranking */}
+        <Route path="/faculty/allocation/rankings" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
+            <Layout>
+              <FacultyRankingPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/faculty/project" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
+            <ProjectDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/faculty/profile" element={
+          <ProtectedRoute allowedRoles={['faculty']}>
+            <Layout>
+              <FacultyProfile />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard/admin" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <AdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/manage-faculty" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <ManageFaculty />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/manage-students" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <ManageStudents />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem4/registrations" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <Sem4RegistrationsTable />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem4/unregistered" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Sem4UnregisteredStudents />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/mtech/sem1/registrations" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <MTechSem1Registrations />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/mtech/sem1/unregistered" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <MTechSem1UnregisteredStudents />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/mtech/sem2/registrations" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <MTechSem2Registrations />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/mtech/sem2/unregistered" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <MTechSem2UnregisteredStudents />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/mtech/sem3/review" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <MTechSem3Review />
+          </ProtectedRoute>
+        } />
+        {/* Redirects to allocated-faculty page - registrations is now a tab there */}
+        <Route path="/admin/sem5/registrations" element={
+          <Navigate to="/admin/sem5/allocated-faculty" replace />
+        } />
+        <Route path="/admin/sem5/allocated-faculty" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <Sem5AllocatedFaculty />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem6/registrations" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <Sem6RegistrationsTable />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem7/review" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Sem7Review />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem7/track-choices" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Sem7TrackFinalization />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem8/review" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Sem8Review />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/sem8/track-choices" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <Sem8TrackFinalization />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/profile" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <AdminProfile />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        {/* Sem 5 Admin Routes */}
+        <Route path="/admin/system-config" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <SystemConfiguration />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/semester-management" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <SemesterManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/manage-projects" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <ManageProjects />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        {/* Gale-Shapley Allocation Dashboard */}
+        <Route path="/admin/allocation" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Layout>
+              <AllocationDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        {/* Shared Routes - Accessible by all authenticated users */}
+        <Route path="/projects/:projectId" element={
+          <ProtectedRoute allowedRoles={['student', 'faculty', 'admin']}>
+            <ProjectDetails />
+          </ProtectedRoute>
+        } />
+        {/* Demo Routes - Remove in production */}
+        <Route path="/toast-demo" element={
+          <Layout>
+            <ToastDemo />
+          </Layout>
+        } />
+        <Route path="/signup-test-demo" element={
+          <Layout>
+            <SignupTestDemo />
+          </Layout>
+        } />
+        <Route path="/specific-error-test-demo" element={
+          <Layout>
+            <SpecificErrorTestDemo />
+          </Layout>
+        } />
+        <Route path="*" element={
+          <Layout>
+            <NotFound />
+          </Layout>
+        } />
       </Routes>
     </>
   );

@@ -42,4 +42,8 @@ router.use('/sem8', sem8Routes);
 const internshipRoutes = require('./internshipRoutes');
 router.use('/internships', internshipRoutes);
 
+// Allocation routes (Gale-Shapley faculty allocation system)
+const allocationRoutes = require('./allocationRoutes');
+router.use('/allocation', allocationRoutes);
+
 module.exports = router;

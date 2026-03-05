@@ -1,0 +1,893 @@
+================================================================================
+       GALE-SHAPLEY (HOSPITAL-RESIDENT) ALGORITHM — COMPLETE EXPLANATION
+                  SPMS Faculty Allocation System — IIIT Pune
+================================================================================
+
+Written for: SPMS Development Team
+Purpose    : Complete understanding of the new Faculty Allocation Algorithm
+             including edge case handling, before implementation begins
+________________________________________________________________________________
+
+
+PART 1 — WHY THIS ALGORITHM EXISTS
+================================================================================
+
+The old system (Choose/Pass) had a fundamental flaw:
+  - Groups proposed to faculty one at a time (sequential)
+  - Faculty either accepted or passed
+  - If passed, the group moved to the next preference
+  - This could take many manual rounds, and popular faculty caused bottlenecks
+
+The new system solves this by running a SIMULTANEOUS, AUTOMATED matching where:
+  - Both groups AND faculty submit ranked preference lists
+  - An algorithm runs once (backend job) and finds the most stable allocation
+  - Nobody gets a result where they would both prefer each other over their
+    current match (this is the "stability" guarantee)
+
+The formal name is the Hospital-Resident Problem (a generalization of
+Gale-Shapley Stable Matching, 1962). It is used in real-world systems like:
+  - US Medical Residency matching (NRMP) — 40,000+ applicants per year
+  - UK Foundation Doctor matching
+  - College admissions in several countries
+
+It is provably correct, provably terminates, and provably stable.
+
+
+________________________________________________________________________________
+
+
+PART 2 — DEFINITIONS AND TERMINOLOGY
+================================================================================
+
+GROUPS     : Teams of 4-5 students needing exactly 1 faculty mentor each.
+             In algorithm terms, these are the "proposing" side (Residents).
+
+FACULTY    : Mentors who can supervise multiple groups up to their capacity.
+             In algorithm terms, these are the "receiving" side (Hospitals).
+
+CAPACITY   : The maximum number of groups a faculty can mentor.
+             Set globally by admin. Can be overridden per faculty by admin.
+
+PREFERENCE LIST (Group side):
+             An ordered list of faculty a group wants as their mentor.
+             Example: G1 prefers F2 first, then F1, then F3.
+             Groups submit this during the "Group Preference Window."
+
+PREFERENCE LIST (Faculty side):
+             An ordered list of groups a faculty is willing to mentor,
+             ranked by preference. Faculty only rank groups that listed them.
+             Faculty submit this during the "Faculty Ranking Window."
+
+PROPOSAL   : When a group formally requests a faculty to be their mentor.
+             In each round, a group proposes to the next faculty on their list.
+
+TENTATIVE HOLD:
+             When a faculty "holds" a group, it is NOT final. The faculty is
+             saying "you are my best option SO FAR." They can drop this group
+             later if a better-ranked group proposes to them.
+
+FORMAL REJECTION:
+             When a faculty rejects a group, the group moves to their next
+             preference. A rejected group never re-proposes to the same faculty.
+
+STABLE MATCHING:
+             A final allocation where no group-faculty pair exists such that
+             BOTH prefer each other over their currently assigned match.
+             If such a pair existed, it would be called a "blocking pair,"
+             and it would mean the matching is unstable (unfair).
+
+ADMIN POOL : Groups that exhausted all their preferences without being matched.
+             Admin manually assigns faculty to these groups.
+
+
+________________________________________________________________________________
+
+
+PART 3 — THE ALGORITHM STEP BY STEP
+================================================================================
+
+--- PRE-ALGORITHM PHASE ---
+
+Step 0.1 — ADMIN OPENS GROUP PREFERENCE WINDOW
+  - Admin configures: start date, end date, max preferences per group (e.g. 5)
+  - Groups log in and rank up to N faculty in order of preference
+  - Groups must select a MINIMUM number (e.g. 3) to prevent lazy single-picks
+  - Window closes on deadline. Late submissions not accepted.
+
+Step 0.2 — SYSTEM BUILDS FACULTY VISIBILITY
+  - After group window closes, each faculty can now SEE which groups listed them
+  - Faculty log in to their dashboard
+  - Faculty see group details: project title, members, project description
+  - Faculty rank the groups that listed them in their preferred order
+  - Faculty do NOT have to rank all of them — any unranked group is treated
+    as "not preferred" and placed at the bottom automatically
+
+Step 0.3 — ADMIN OPENS FACULTY RANKING WINDOW
+  - Faculty have a fixed window (e.g. 5 days) to submit their rankings
+  - If a faculty does not submit rankings before the deadline, the system
+    auto-assigns a random order to all groups that listed that faculty
+    (this protects groups from being blocked by unresponsive faculty)
+  - Window closes. Algorithm is now ready to run.
+
+--- ALGORITHM EXECUTION PHASE ---
+
+Step 1 — INITIALIZE
+  - All groups are marked as UNMATCHED
+  - All faculty slots are empty (current count = 0)
+  - Each group's "next proposal pointer" starts at position 1 (their top choice)
+
+Step 2 — ROUND BEGINS
+  - Every currently UNMATCHED group that still has preferences remaining
+    makes a proposal to the next faculty on their list
+
+  Example:
+    G1 proposes to F1 (G1's 1st choice)
+    G5 proposes to F3 (G5's 2nd choice, because F1 rejected G5 last round)
+
+Step 3 — FACULTY EVALUATE PROPOSALS
+  For each faculty that received at least one proposal this round:
+
+    a) Combine: currently held groups + new proposals = candidate pool
+    b) Sort candidate pool by faculty's own ranking (best to worst)
+    c) Keep the top [capacity] groups as TENTATIVE HOLDS
+    d) Formally REJECT all others (both old holds that got bumped, and
+       new proposals that didn't make the cut)
+
+  IMPORTANT: A group that was held in a previous round CAN be rejected now
+  if a higher-ranked group proposes in the current round.
+
+Step 4 — PROCESS REJECTIONS
+  - Rejected groups move their "next proposal pointer" forward by 1
+  - They will propose to their next preference in the next round
+  - A group that has been rejected by ALL faculties on their list is sent
+    to the ADMIN POOL (they will not propose again)
+
+Step 5 — CHECK TERMINATION CONDITION
+  If EITHER of these is true, the algorithm stops:
+    a) All groups are either matched (tentatively held) or in admin pool
+    b) No group made a new proposal in this round (nothing changed)
+
+  If neither is true, go back to Step 2 (next round).
+
+Step 6 — FINALIZATION
+  - All tentative holds become PERMANENT allocations
+  - Groups in admin pool are flagged for manual admin assignment
+  - Allocation results are stored in the database
+  - Notifications sent to all groups and faculty
+
+--- POST-ALGORITHM PHASE ---
+
+Step 7 — ADMIN REVIEWS RESULTS
+  - Admin sees the full allocation table
+  - Admin sees the admin pool (unmatched groups)
+  - Admin can preview before confirming (results not visible to students yet)
+  - Admin confirms results published — all parties notified
+
+Step 8 — ADMIN HANDLES POOL GROUPS
+  - Admin views each unmatched group's project details
+  - Admin sees list of faculty who have remaining capacity (under their limit)
+  - Admin manually assigns a faculty to each pool group
+  - These assignments bypass the preference system but admin can use judgment
+    (e.g. match by research area, faculty expertise)
+
+
+________________________________________________________________________________
+
+
+PART 4 — COMPLETE EXAMPLE (5 Faculty, 22 Groups, Capacity = 4)
+================================================================================
+
+SETUP:
+  Total faculty slots = 5 x 4 = 20
+  Total groups = 22
+  Guaranteed minimum admin pool = 2 groups (22 - 20 = 2)
+
+GROUP PREFERENCE LISTS:
+  G1  → F1, F2, F3
+  G2  → F1, F2, F4
+  G3  → F1, F3, F4
+  G4  → F1, F2, F5
+  G5  → F1, F3, F5
+  G6  → F1, F2, F3
+  G7  → F2, F1, F3
+  G8  → F2, F3, F4
+  G9  → F2, F1, F5
+  G10 → F2, F3, F5
+  G11 → F2, F4, F5
+  G12 → F3, F1, F2
+  G13 → F3, F2, F4
+  G14 → F3, F4, F5
+  G15 → F3, F1, F5
+  G16 → F4, F3, F5
+  G17 → F4, F2, F5
+  G18 → F4, F5, F1
+  G19 → F4, F5, F3
+  G20 → F5, F4, F3
+  G21 → F5, F4, F2
+  G22 → F5, F3, F4
+
+FACULTY RANKING LISTS (submitted by faculty after seeing who listed them):
+  F1 ranks: G3 > G5 > G1 > G6 > G2 > G4
+  F2 ranks: G7 > G9 > G8 > G10 > G2 > G4 > G11
+  F3 ranks: G12 > G13 > G14 > G15 > G8 > G5 > G3 > G22
+  F4 ranks: G16 > G17 > G18 > G19 > G11 > G14 > G2 > G22
+  F5 ranks: G20 > G21 > G11 > G4 > G14 > G22
+
+--- ROUND 1 ---
+
+Proposals:
+  G1, G2, G3, G4, G5, G6 → F1   (6 proposals, capacity = 4)
+  G7, G8, G9, G10, G11   → F2   (5 proposals, capacity = 4)
+  G12, G13, G14, G15     → F3   (4 proposals, capacity = 4)
+  G16, G17, G18, G19     → F4   (4 proposals, capacity = 4)
+  G20, G21, G22          → F5   (3 proposals, capacity = 4)
+
+F1 evaluates (ranking: G3>G5>G1>G6>G2>G4), keeps top 4:
+  HOLDS:   G3, G5, G1, G6
+  REJECTS: G2, G4
+
+F2 evaluates (ranking: G7>G9>G8>G10>G2>G4>G11), keeps top 4:
+  HOLDS:   G7, G9, G8, G10
+  REJECTS: G11
+
+F3 evaluates (only 4 proposals, exactly at capacity):
+  HOLDS:   G12, G13, G14, G15
+  REJECTS: none
+
+F4 evaluates (only 4 proposals, exactly at capacity):
+  HOLDS:   G16, G17, G18, G19
+  REJECTS: none
+
+F5 evaluates (only 3 proposals, below capacity, 1 slot still open):
+  HOLDS:   G20, G21, G22
+  REJECTS: none
+
+End of Round 1:
+  Rejected: G2  (moves to F2, their 2nd choice)
+            G4  (moves to F2, their 2nd choice)
+            G11 (moves to F4, their 2nd choice)
+
+--- ROUND 2 ---
+
+Proposals:
+  G2  → F2
+  G4  → F2
+  G11 → F4
+
+F2 currently holds [G7, G9, G8, G10]. New proposals: G2, G4.
+  Candidate pool ranked: G7 > G9 > G8 > G10 > G2 > G4
+  Keeps top 4: G7, G9, G8, G10
+  HOLDS:   G7, G9, G8, G10  (no change)
+  REJECTS: G2, G4 again
+
+F4 currently holds [G16, G17, G18, G19]. New proposal: G11.
+  Candidate pool ranked: G16 > G17 > G18 > G19 > G11
+  Keeps top 4: G16, G17, G18, G19
+  HOLDS:   G16, G17, G18, G19  (no change)
+  REJECTS: G11
+
+End of Round 2:
+  Rejected: G2  (moves to F4, their 3rd choice)
+            G4  (moves to F5, their 3rd choice)
+            G11 (moves to F5, their 3rd choice)
+
+--- ROUND 3 ---
+
+Proposals:
+  G2  → F4
+  G4  → F5
+  G11 → F5
+
+F4 currently holds [G16, G17, G18, G19]. New proposal: G2.
+  Candidate pool ranked: G16 > G17 > G18 > G19 > G2
+  Keeps top 4: G16, G17, G18, G19
+  HOLDS:   G16, G17, G18, G19  (no change)
+  REJECTS: G2
+  G2 has now been rejected by F1, F2, F4 (all 3 preferences exhausted)
+  G2 → ADMIN POOL
+
+F5 currently holds [G20, G21, G22] with 1 EMPTY SLOT. New proposals: G4, G11.
+  Candidate pool: G20, G21, G22 (held) + G4, G11 (new) = 5 total
+  F5 ranking: G20 > G21 > G11 > G4 > G22
+  Keeps top 4: G20, G21, G11, G4
+  HOLDS:   G20, G21, G11, G4   (now full)
+  REJECTS: G22
+
+  *** KEY MOMENT: G22 was held since Round 1 but gets DISPLACED in Round 3 ***
+  *** because F5 prefers G11 and G4 over G22.                              ***
+  *** This is exactly why holds are "tentative" until algorithm stops.     ***
+
+End of Round 3:
+  G2  → ADMIN POOL (all preferences exhausted)
+  G22 → rejected by F5, moves to F3 (their 2nd choice)
+
+--- ROUND 4 ---
+
+Proposals:
+  G22 → F3
+
+F3 currently holds [G12, G13, G14, G15] (full). New proposal: G22.
+  Candidate pool ranked: G12 > G13 > G14 > G15 > G22
+  Keeps top 4: G12, G13, G14, G15
+  HOLDS:   G12, G13, G14, G15  (no change)
+  REJECTS: G22 → moves to F4 (their 3rd choice)
+
+--- ROUND 5 ---
+
+Proposals:
+  G22 → F4
+
+F4 currently holds [G16, G17, G18, G19] (full). New proposal: G22.
+  Candidate pool ranked: G16 > G17 > G18 > G19 > G22
+  Keeps top 4: G16, G17, G18, G19
+  HOLDS:   G16, G17, G18, G19  (no change)
+  REJECTS: G22
+  G22 has now been rejected by F5, F3, F4 (all 3 preferences exhausted)
+  G22 → ADMIN POOL
+
+--- ALGORITHM TERMINATES ---
+
+No unmatched group has any remaining preferences. Nothing more to process.
+
+FINAL ALLOCATION:
+  F1 → G3, G5, G1, G6      (4/4 slots filled)
+  F2 → G7, G9, G8, G10     (4/4 slots filled)
+  F3 → G12, G13, G14, G15  (4/4 slots filled)
+  F4 → G16, G17, G18, G19  (4/4 slots filled)
+  F5 → G20, G21, G11, G4   (4/4 slots filled)
+  ADMIN POOL → G2, G22
+
+GROUP JOURNEY SUMMARY:
+  G1  → F1 ✓  (Round 1, 1st preference matched)
+  G2  → F1✗ → F2✗ → F4✗ → ADMIN POOL
+  G3  → F1 ✓  (Round 1, F1's top pick)
+  G4  → F1✗ → F2✗ → F5 ✓  (Round 3, 3rd preference matched)
+  G5  → F1 ✓  (Round 1, 1st preference matched)
+  G6  → F1 ✓  (Round 1, 1st preference matched)
+  G7  → F2 ✓  (Round 1, 1st preference matched)
+  G8  → F2 ✓  (Round 1, 1st preference matched)
+  G9  → F2 ✓  (Round 1, 1st preference matched)
+  G10 → F2 ✓  (Round 1, 1st preference matched)
+  G11 → F2✗ → F4✗ → F5 ✓  (Round 3, displaced G22)
+  G12 → F3 ✓  (Round 1, 1st preference matched)
+  G13 → F3 ✓  (Round 1, 1st preference matched)
+  G14 → F3 ✓  (Round 1, 1st preference matched)
+  G15 → F3 ✓  (Round 1, 1st preference matched)
+  G16 → F4 ✓  (Round 1, 1st preference matched)
+  G17 → F4 ✓  (Round 1, 1st preference matched)
+  G18 → F4 ✓  (Round 1, 1st preference matched)
+  G19 → F4 ✓  (Round 1, 1st preference matched)
+  G20 → F5 ✓  (Round 1, 1st preference matched)
+  G21 → F5 ✓  (Round 1, 1st preference matched)
+  G22 → F5✗ (held R1-R2, bumped R3) → F3✗ → F4✗ → ADMIN POOL
+
+
+________________________________________________________________________________
+
+
+PART 5 — ALGORITHM PROPERTIES (GUARANTEES)
+================================================================================
+
+PROPERTY 1 — TERMINATION
+  The algorithm ALWAYS stops. It cannot loop forever.
+  Proof: In every round, at least one group either gets matched or crosses off
+  a preference. Since preference lists are finite and a group never re-proposes
+  to a faculty that rejected them, the number of possible proposals is bounded.
+  Worst case rounds = (number of groups) x (max preference list length).
+
+PROPERTY 2 — COMPLETENESS
+  Every group that CAN be matched WILL be matched.
+  A group only ends up in the admin pool if total capacity < total groups
+  OR if the group's preference list is too short to reach an available faculty.
+
+PROPERTY 3 — STABILITY
+  The result is "stable" — no blocking pair exists.
+  A blocking pair would mean: Group G prefers Faculty F over their assigned
+  mentor, AND Faculty F prefers Group G over one of their currently assigned
+  groups. If such a pair existed, G would have proposed to F at some point,
+  and F would have held G (displacing someone else). Since the algorithm
+  handles all proposals, no such pair can survive to the final result.
+
+PROPERTY 4 — GROUP-OPTIMAL (since groups are the proposing side)
+  Every group gets the BEST possible match they could get in ANY stable
+  allocation. No other stable matching exists where a group would be better
+  off. This is why groups are the proposing side — it makes the system
+  fair from the students' perspective.
+
+PROPERTY 5 — FACULTY-PESSIMAL (the tradeoff)
+  Every faculty gets the WORST stable match from their perspective.
+  This is the inherent tradeoff when groups propose. If we wanted to favor
+  faculty, we would make faculty the proposing side. For SPMS, group-optimal
+  is more appropriate because students are the primary users of the system.
+
+
+________________________________________________________________________________
+
+
+PART 6 — EDGE CASES AND HOW EACH IS HANDLED
+================================================================================
+
+--- EDGE CASE 1: POPULAR FACULTY OVERLOAD ---
+
+Scenario:
+  F1 is everyone's top choice. 18 out of 22 groups list F1 as Priority 1.
+  F1 has capacity 4. 14 groups will be rejected in Round 1.
+
+Problem:
+  Those 14 groups all cascade to their 2nd choice faculty simultaneously,
+  potentially overloading F2, F3, etc. in Round 2. This creates a wave
+  of rejections that can take many rounds to resolve.
+
+How Algorithm Handles It:
+  The algorithm handles this naturally — each round, rejected groups move
+  to their next preference. The cascade resolves itself round by round.
+  No special handling needed; the algorithm terminates regardless.
+
+Prevention (Admin side):
+  Admin should enforce a MINIMUM SPREAD RULE during preference submission:
+  "You cannot list the same faculty as Priority 1 if more than X groups
+  already have." (Optional rule, configurable by admin.)
+  Alternatively, admin can display real-time demand indicators so groups
+  can see how many others have listed a faculty as #1.
+
+--- EDGE CASE 2: FACULTY DOES NOT SUBMIT RANKINGS ---
+
+Scenario:
+  F3 never logs in during the Faculty Ranking Window and submits no rankings.
+
+Problem:
+  Without F3's rankings, the algorithm cannot evaluate which groups F3
+  prefers. All groups that listed F3 are in limbo.
+
+Solution:
+  After the Faculty Ranking Window closes, for any faculty who did NOT submit:
+    - System auto-generates rankings using a DEFAULT ORDERING
+    - Default ordering options (admin configurable):
+        Option A: Order by group formation timestamp (earliest = higher rank)
+        Option B: Random order (shuffled)
+        Option C: Alphabetical by group name
+    - Faculty is notified by email that auto-ranking was applied
+    - Admin can see which faculty did not submit (participation audit log)
+    - Algorithm runs with auto-generated rankings for non-submitting faculty
+
+--- EDGE CASE 3: GROUP HAS ONLY 1 PREFERENCE ---
+
+Scenario:
+  G7 only lists F2 as their single preference. F2 rejects G7 (already full
+  with higher-ranked groups). G7 has no more preferences.
+
+Problem:
+  G7 immediately goes to admin pool after just 1 rejection. Admin pool
+  grows unnecessarily due to lazy or uninformed preference submission.
+
+Solution:
+  ENFORCE MINIMUM PREFERENCE LIST LENGTH:
+    - Admin configures: minFacultyPreferences = 3 (or any number)
+    - Frontend validates before allowing submission
+    - Backend also validates (double protection)
+    - Group cannot finalize/submit preferences until minimum is met
+    - Error message: "Please select at least 3 faculty preferences"
+
+  This is a config key in SystemConfig:
+    Key: "sem5.minFacultyPreferences"    Value: 3
+
+--- EDGE CASE 4: GROUP'S ENTIRE PREFERENCE LIST IS REJECTED ---
+
+Scenario:
+  G2 lists F1, F2, F4 — all three reject G2. G2 is in admin pool.
+
+Problem:
+  Admin pool group has no mutual match at all. Admin must manually assign.
+
+Solution:
+  Admin Pool Management Interface:
+    - Admin sees G2's project details, research area, members
+    - Admin sees all faculty with REMAINING CAPACITY (under their limit)
+    - Admin sees each faculty's research area / expertise tags
+    - Admin manually picks the most suitable faculty
+    - Assignment is recorded as "admin_assigned" (not "algorithm_matched")
+      in the allocation record — useful for audit and analytics
+
+  In the database:
+    allocation.allocatedBy = "admin"   (vs "algorithm" for normal matches)
+
+--- EDGE CASE 5: A GROUP IS BUMPED AFTER BEING HELD FOR MULTIPLE ROUNDS ---
+
+Scenario:
+  G22 is held by F5 for Rounds 1 and 2. In Round 3, G11 and G4 propose to F5.
+  F5 prefers both over G22. G22 is formally rejected.
+
+Problem:
+  G22 has already "mentally" considered themselves matched to F5. The rejection
+  after multiple rounds can be disorienting from a UX perspective. Also, G22
+  now has fewer preferences remaining.
+
+How Algorithm Handles It:
+  This is expected and by design. G22 simply continues to their next preference.
+  From the algorithm's perspective, G22 was never matched — only tentatively held.
+
+UX Handling:
+  During the algorithm run, student dashboards should show:
+    Status: "Allocation in progress — please wait"
+  NOT:
+    Status: "Tentatively matched to F5"
+  Students should NOT see intermediate tentative states. They only see
+  the final result after admin confirms the allocation.
+
+--- EDGE CASE 6: FACULTY CAPACITY IS 0 (UNAVAILABLE) ---
+
+Scenario:
+  F4 is on leave. Admin sets F4's capacity to 0. But some groups have already
+  listed F4 in their preferences before admin updated this.
+
+Problem:
+  Groups that listed F4 as a preference will propose to F4. F4 rejects all
+  of them (capacity = 0). These groups burn a preference slot for no reason.
+
+Solution:
+  STEP 1 — ADMIN SETS CAPACITY TO 0 BEFORE PREFERENCE WINDOW OPENS:
+    - F4 is hidden from the faculty selection list on the student preference form
+    - Groups cannot list F4 at all
+
+  STEP 2 — IF CAPACITY SET TO 0 AFTER GROUPS HAVE ALREADY SUBMITTED:
+    - System notifies affected groups: "F4 is no longer available.
+      Please update your preference list."
+    - A re-submission window is opened for affected groups only
+    - OR: System automatically removes F4 from all preference lists and
+      shifts remaining preferences up (next choice becomes new last choice)
+    - Admin chooses which option via a config toggle
+
+--- EDGE CASE 7: TOTAL CAPACITY < TOTAL GROUPS ---
+
+Scenario:
+  22 groups, 5 faculty x 4 capacity = 20 slots. 2 groups WILL go to admin pool
+  regardless of how perfectly preferences align.
+
+Problem:
+  Admin may not realize there are more groups than capacity until algorithm runs.
+
+Solution:
+  PRE-ALGORITHM WARNING SYSTEM:
+    - Admin dashboard shows real-time: "Current groups: 22 | Total capacity: 20"
+    - Warning banner: "Capacity shortage: minimum 2 groups will require
+      manual allocation. Consider increasing faculty limits or adding faculty."
+    - Admin can increase individual faculty capacities BEFORE running
+    - Admin can also add temporary capacity override for specific faculty
+
+  POST-ALGORITHM:
+    - Algorithm guarantees that the groups in admin pool are those with the
+      weakest mutual preference fit — NOT arbitrary groups
+
+--- EDGE CASE 8: FACULTY RANKS ONLY SOME GROUPS (PARTIAL RANKING) ---
+
+Scenario:
+  15 groups listed F1. F1 only ranks 6 of them (their favorites).
+  The other 9 groups that listed F1 are unranked by F1.
+
+Problem:
+  The algorithm needs a complete ordering. If unranked groups propose to F1,
+  how does F1 compare them to ranked groups?
+
+Solution:
+  RANKED ALWAYS BEATS UNRANKED.
+  Among unranked groups, apply default ordering (timestamp / random / alpha).
+
+  This means:
+    - F1's top 6 ranked groups are considered first
+    - The 9 unranked groups are all placed below them in default order
+    - An unranked group can still be matched to F1 if the ranked groups
+      get picked up by other faculty they preferred more
+
+  Faculty dashboard should show:
+    "You have ranked 6 out of 15 groups. Remaining 9 will use default ordering.
+     Submit full rankings for the best outcome."
+
+--- EDGE CASE 9: TWO GROUPS TIE IN FACULTY RANKING ---
+
+Scenario:
+  Faculty mistakenly assigns the same rank to two groups.
+
+Problem:
+  Algorithm needs strict ordering. Ties break determinism.
+
+Solution:
+  PREVENT TIES AT SUBMISSION:
+    - Faculty ranking interface uses DRAG-AND-DROP ordering
+    - No numerical input that could produce ties
+    - Each position holds exactly one group
+    - Ties are structurally impossible at UI level
+
+  IF TIES EXIST IN DATABASE (data integrity fallback):
+    - Tiebreak: earlier group formation timestamp wins
+    - Log a warning in admin audit log
+
+--- EDGE CASE 10: GROUP DISBANDS AFTER SUBMITTING PREFERENCES ---
+
+Scenario:
+  G7 submitted faculty preferences. Before the algorithm runs, G7 disbands
+  because a member leaves and the group drops below minimum size.
+
+Problem:
+  G7 is in preference data but shouldn't participate in matching.
+
+Solution:
+  GROUP VALIDITY CHECK before algorithm runs:
+    - Admin triggers algorithm manually (not automatic)
+    - Before running, system checks ALL groups:
+        - Still has minimum members?           ✓
+        - Group status is "finalized"?         ✓
+        - Faculty preferences submitted?       ✓
+    - Invalid groups are EXCLUDED from algorithm run
+    - Admin sees a pre-run validation report:
+      "3 groups excluded due to invalid status. Review before proceeding."
+    - Admin can address issues before confirming to run
+
+--- EDGE CASE 11: ALGORITHM RUN FAILS MIDWAY (SYSTEM ERROR) ---
+
+Scenario:
+  Server crashes or MongoDB connection drops while algorithm is executing.
+  The database is now in a partial state — some groups matched, some not.
+
+Problem:
+  Partial allocation is worse than no allocation.
+
+Solution:
+  TRANSACTIONAL EXECUTION:
+    - Entire algorithm runs inside a MongoDB TRANSACTION
+    - NO database writes happen until the algorithm FULLY COMPLETES
+    - If any error occurs, the entire transaction is ROLLED BACK
+    - Database returns to pre-algorithm state automatically
+    - Admin sees: "Algorithm run failed. No changes made. Please try again."
+    - Retry is safe because no partial state was written
+
+--- EDGE CASE 12: ADMIN WANTS TO RE-RUN ALGORITHM ---
+
+Scenario:
+  Admin ran the algorithm, reviewed results, wants to change faculty capacities
+  and re-run for a better outcome.
+
+Problem:
+  Previous tentative results exist. Re-running without clearing could cause
+  conflicts or double-allocations.
+
+Solution:
+  ALGORITHM RUN STATES:
+    State 1: "not_run"    — no results yet
+    State 2: "preview"    — run complete, results visible to admin only
+    State 3: "confirmed"  — admin confirmed, visible to all parties
+
+  Admin can:
+    - Re-run  → only allowed in "preview" state, clears previous results
+    - Confirm → moves to "confirmed", notifies all parties
+    - Cannot re-run after "confirmed" (would invalidate student expectations)
+
+
+________________________________________________________________________________
+
+
+PART 7 — ALGORITHM COMPLEXITY AND PERFORMANCE
+================================================================================
+
+TIME COMPLEXITY:
+  Worst case: O(n x m) where n = number of groups, m = max preference list length
+
+  For SPMS scale (assumed):
+    Groups per semester : ~60-80 (entire batch)
+    Max preferences     : 5-7 per group
+    Worst case          : 80 x 7 = 560 comparison operations
+
+  This runs in MILLISECONDS on any modern server.
+  No performance concerns at SPMS scale.
+
+COMPARISON TO OLD SYSTEM:
+  Old (Choose/Pass):
+    - Could take days or weeks of manual back-and-forth
+    - Faculty had to log in repeatedly across multiple manual rounds
+    - Groups were stuck waiting with no clear timeline
+    - Admin had to manually follow up on non-responsive faculty
+
+  New (Gale-Shapley):
+    - Entire matching computation: milliseconds
+    - Faculty only log in ONCE to submit rankings
+    - Groups see results the same day admin confirms
+    - Total calendar time: 1-2 weeks (humans submitting, not computation)
+    - Admin has full preview and control before publishing
+
+
+________________________________________________________________________________
+
+
+PART 8 — SYSTEM CONFIGURATION KEYS NEEDED
+================================================================================
+
+All of these go into the existing SystemConfig model (already in codebase):
+
+  Key: "sem5.allocation.minGroupPreferences"
+    Type: Number | Default: 3
+    Purpose: Minimum faculty preferences a group must submit
+
+  Key: "sem5.allocation.maxGroupPreferences"
+    Type: Number | Default: 7
+    Purpose: Maximum faculty preferences a group can submit
+
+  Key: "sem5.allocation.defaultFacultyCapacity"
+    Type: Number | Default: 4
+    Purpose: Default max groups per faculty for this semester
+
+  Key: "sem5.allocation.tiebreakMethod"
+    Type: String (enum) | Default: "timestamp"
+    Options: "timestamp" | "random" | "alphabetical"
+    Purpose: How to rank unranked or tied groups in faculty lists
+
+  Key: "sem5.allocation.groupPreferenceWindowStart"
+    Type: Date
+    Purpose: When groups can start submitting preferences
+
+  Key: "sem5.allocation.groupPreferenceWindowEnd"
+    Type: Date
+    Purpose: Deadline for group preference submission
+
+  Key: "sem5.allocation.facultyRankingWindowStart"
+    Type: Date
+    Purpose: When faculty can start ranking groups
+
+  Key: "sem5.allocation.facultyRankingWindowEnd"
+    Type: Date
+    Purpose: Deadline for faculty ranking submission
+
+  Key: "sem5.allocation.autoRankUnsubmittedFaculty"
+    Type: Boolean | Default: true
+    Purpose: Auto-rank groups for faculty who do not submit rankings
+
+  Key: "sem5.allocation.showDemandIndicators"
+    Type: Boolean | Default: true
+    Purpose: Show groups how many others have listed each faculty
+
+
+________________________________________________________________________________
+
+
+PART 9 — NEW DATABASE FIELDS NEEDED
+================================================================================
+
+Faculty Model — add these fields:
+  mentorCapacity: {
+    type: Number,
+    default: (pulled from SystemConfig at runtime)
+    // Admin can override per faculty from the Faculty management page
+  }
+  currentMentorCount: {
+    type: Number,
+    default: 0
+    // Incremented when a group is confirmed-allocated to this faculty
+  }
+  hasSubmittedRankings: {
+    type: Boolean,
+    default: false
+    // Tracks per allocation run whether faculty submitted rankings
+  }
+
+FacultyPreference Model — add these fields:
+  facultyRankings: [{
+    faculty: ObjectId (ref: Faculty),
+    rankedGroups: [{ group: ObjectId (ref: Group), rank: Number }],
+    submittedAt: Date,
+    isAutoGenerated: Boolean
+  }]
+  allocationRound: Number     // which round the final match happened
+  allocatedBy: String         // "algorithm" | "admin"
+  algorithmRunId: String      // links all allocations from same run
+
+New Model — AllocationRun:
+  semester: Number
+  academicYear: String
+  status: String              // "not_run" | "preview" | "confirmed"
+  runAt: Date
+  confirmedAt: Date
+  confirmedBy: ObjectId (ref: User)
+  totalGroups: Number
+  matchedGroups: Number
+  adminPoolGroups: Number
+  totalRounds: Number
+  results: [{
+    group: ObjectId,
+    faculty: ObjectId,
+    round: Number,
+    allocatedBy: String
+  }]
+
+
+________________________________________________________________________________
+
+
+PART 10 — SUMMARY
+================================================================================
+
+The Gale-Shapley Hospital-Resident algorithm provides SPMS with:
+
+  PROVABLY STABLE MATCHING
+    No group-faculty pair exists where both prefer each other over their
+    current assignment. Stability is mathematically guaranteed.
+
+  GROUP-OPTIMAL RESULTS
+    Every group gets the best possible match available to them in any
+    stable allocation. Designed to be fair from the students' perspective.
+
+  GUARANTEED TERMINATION
+    The algorithm always stops in finite rounds. Infinite loops are
+    structurally impossible because groups never re-propose to the same
+    faculty and preference lists are finite.
+
+  COMPLETE MATCHING
+    Every group that can be matched will be matched. Only groups with
+    exhausted preferences or impossible constraints go to admin pool.
+
+  FAIR ADMIN POOL
+    The groups in admin pool are those with the weakest mutual fit,
+    not arbitrary unlucky groups.
+
+  HANDLES ALL EDGE CASES
+    Faculty non-submission, group disbanding, capacity mismatches, ties,
+    partial rankings — all have defined policies and automated handling.
+
+  RUNS IN MILLISECONDS
+    Zero performance concerns at SPMS scale (60-80 groups per semester).
+
+  SINGLE BACKEND JOB
+    Replaces days or weeks of manual Choose/Pass rounds with one automated
+    computation that admin can trigger, preview, and confirm.
+
+The key shift in thinking for the team:
+  OLD: Faculty make decisions one group at a time, in real-time, over days
+  NEW: Both sides submit ranked lists once, algorithm decides, admin confirms
+
+                            Faculty Allocation System: Presentation & User Guide
+This document explains the step-by-step workflow of the Faculty Allocation System (powered by the Gale-Shapley algorithm). It is designed to be easily understood by all users: Administrators, Faculty, and Students.
+
+🧠 What is Gale-Shapley? (The Layman's Explanation)
+Instead of assigning faculty randomly or manually, the system uses a mathematical algorithm called Gale-Shapley (Stable Matching).
+
+Groups rank their favorite Faculty members.
+Faculty look at the groups that chose them, and rank their favorites back.
+The Algorithm does the math to match everyone up in the fairest, most stable way possible—guaranteeing that no group and faculty would rather have each other over their current assignments.
+🔄 The End-to-End Workflow
+The allocation process happens in Four distinct phases.
+
+Phase 1: Administrator Setup (Preparation)
+Before anyone can pick anything, the Admin must configure the rules.
+
+Where to go: Admin Dashboard → Settings → Faculty Allocation
+Actions Required:
+Set Faculty Capacity: Define how many groups each faculty member is allowed to mentor (e.g., maximum 4 groups per faculty).
+Open the Student Window: Use the date picker to set the Group Preference Window to "Open". This gives students a deadline to submit their choices.
+Phase 2: Student Action (Proposing)
+Students form groups and pick exactly who they want to work with.
+
+Where to go: Student Dashboard → Faculty Preferences (Quick Action Card)
+Actions Required:
+Finalize Group: Students MUST be in a finalized, complete group first.
+Select & Rank: The Group Leader opens the preference page. They select a minimum number of faculty from the list (e.g., top 5) and arrange them in order from Priority 1 (Most Wanted) to Priority 5.
+Submit: Once submitted, the group's choices are locked in.
+Phase 3: Faculty Action (Receiving & Counter-Ranking)
+Faculty members review the groups that want them.
+
+Where to go: Faculty Dashboard → Allocation Rankings (In the Navigation Bar)
+Actions Required:
+Admin shifts the windows: The Admin closes the Student window and opens the Faculty Ranking Window.
+Review Interested Groups: Faculty will only see the groups that specifically chose them. They can click to see the students inside the group.
+Counter-Rank: The Faculty drags and drops the groups in order of preference.
+Note: If a faculty member forgets to submit rankings before the deadline, the system gracefully handles it by auto-ranking groups (usually by who formed their group first).
+Phase 4: Execution & Publishing (The Magic)
+The Admin brings it all together and finalizes the semester.
+
+Where to go: Admin Dashboard → Faculty Allocation
+Actions Required:
+Run the Algorithm: The Admin clicks the "Run Algorithm" button. In milliseconds, the system calculates the optimal matches.
+Review Matches: The Admin previews the results in a clean table (e.g., Group A got their 1st choice, Group B got their 2nd choice).
+Handle Exceptions (Admin Pool): If a group put all their eggs in one basket and didn't get matched, they fall into the "Admin Pool". The Admin can manually assign these leftover groups to faculty who still have empty slots.
+Publish! The Admin clicks "Confirm Allocation".
+🎉 The Result: The matches are now permanent. Students and Faculty immediately see their newly linked Projects on their respective dashboards, and chat/collaboration features are unlocked!
+
+================================================================================
+                           END OF DOCUMENT
+================================================================================
