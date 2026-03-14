@@ -51,11 +51,13 @@ router.get('/unallocated-groups', adminController.getUnallocatedGroups);
 // Allocation management routes
 router.get('/allocations', adminController.getAllocations);
 router.post('/force-allocate', adminController.forceAllocateFaculty);
+router.post('/allocations/run', adminController.runAllocation);
 
 // Sem 5 specific routes
 router.get('/allocation-statistics', adminController.getAllocationStatistics);
 router.get('/sem5/registrations', adminController.getSem5MinorProject2Registrations);
 router.get('/sem5/allocated-faculty', adminController.getSem5AllocatedFaculty);
+router.get('/allocated-faculty', adminController.getSem5AllocatedFaculty); // Generic route — pass ?semester=X
 router.get('/sem5/non-registered-students', adminController.getSem5NonRegisteredStudents);
 router.get('/groups/sem5', adminController.getSem5Groups);
 router.get('/statistics/sem5', adminController.getSem5Statistics);

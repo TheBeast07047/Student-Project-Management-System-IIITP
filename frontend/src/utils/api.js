@@ -8,7 +8,7 @@ import { getToken, removeToken } from './tokenStorage';
 const handleApiResponse = async (response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    
+
     // Handle 401 Unauthorized - redirect to login
     if (response.status === 401) {
       removeToken();
@@ -17,7 +17,7 @@ const handleApiResponse = async (response) => {
         window.location.href = '/login';
       }
     }
-    
+
     // Create error with full response data preserved for error handling
     const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
     error.response = {
@@ -34,10 +34,10 @@ const handleApiResponse = async (response) => {
 // Generic API Request Function
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   // Get token from storage (checks both localStorage and sessionStorage)
   const token = getToken();
-  
+
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    
+
     // Handle 404 errors for system config endpoints silently (expected when configs aren't initialized)
     if (isSystemConfigEndpoint && response.status === 404) {
       // For system config 404s, suppress console errors and return structured error
@@ -70,18 +70,18 @@ const apiRequest = async (endpoint, options = {}) => {
       error.status = 404;
       throw error;
     }
-    
+
     return await handleApiResponse(response);
   } catch (error) {
     // Suppress console errors for system config 404s (expected when configs aren't initialized)
-    const isSystemConfig404 = isSystemConfigEndpoint && 
-                              (error.isConfig404 || error.status === 404 || error.silent || 
-                               error.message?.includes('404') || error.message?.includes('not found'));
-    
+    const isSystemConfig404 = isSystemConfigEndpoint &&
+      (error.isConfig404 || error.status === 404 || error.silent ||
+        error.message?.includes('404') || error.message?.includes('not found'));
+
     if (!isSystemConfig404 && !error.silent) {
       console.error('API Request Error:', error);
     }
-    
+
     throw error;
   }
 };
@@ -90,22 +90,22 @@ const apiRequest = async (endpoint, options = {}) => {
 export const api = {
   // GET request
   get: (endpoint) => apiRequest(endpoint, { method: 'GET' }),
-  
+
   // POST request
   post: (endpoint, data) => apiRequest(endpoint, {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  
+
   // PUT request
   put: (endpoint, data) => apiRequest(endpoint, {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
-  
+
   // DELETE request
   delete: (endpoint) => apiRequest(endpoint, { method: 'DELETE' }),
-  
+
   // PATCH request
   patch: (endpoint, data) => apiRequest(endpoint, {
     method: 'PATCH',
@@ -143,35 +143,35 @@ export const studentAPI = {
     return api.get(`/student/groups${queryString ? '?' + queryString : ''}`);
   },
   getInternships: () => api.get('/student/internships'),
-  
+
   // Student Profile Management
   getProfile: () => api.get('/student/profile'),
   updateProfile: (data) => api.put('/student/profile', data),
-  
+
   // Sem 4 Project Management
   registerProject: (projectData) => api.post('/student/projects', projectData),
   updateProject: (projectId, data) => api.put(`/student/projects/${projectId}`, data),
   getProject: (projectId) => api.get(`/student/projects/${projectId}`),
-  
+
   // Sem 4 PPT Upload (multipart/form-data)
   uploadPPT: (projectId, formData) => apiRequest(`/student/projects/${projectId}/submit-ppt`, {
     method: 'POST',
     body: formData,
     headers: {} // Let browser set Content-Type for multipart/form-data
   }),
-  
+
   // Sem 4 PPT removal
   removePPT: (projectId) => apiRequest(`/student/projects/${projectId}/remove-ppt`, {
     method: 'DELETE'
   }),
-  
+
   // Sem 4 Status Tracking
   getSem4Status: (projectId) => api.get(`/student/projects/${projectId}/sem4-status`),
   getSem4Features: () => api.get('/student/features'),
-  
+
   // Sem 4 Presentation Scheduling
   schedulePresentation: (projectId, data) => api.post(`/student/projects/${projectId}/schedule-presentation`, data),
-  
+
   // Upload tracking methods
   getUploads: () => api.get('/student/uploads'),
   getProjectUploads: (projectId) => api.get(`/student/projects/${projectId}/uploads`),
@@ -179,7 +179,7 @@ export const studentAPI = {
 
   // Sem 5 Project Registration
   registerMinorProject2: (projectData) => api.post('/student/projects/minor2/register', projectData),
-  
+
   // System Config (handles 404 gracefully for missing configs)
   getSystemConfig: async (key) => {
     try {
@@ -200,7 +200,7 @@ export const studentAPI = {
     }
   },
   getSystemConfigs: () => api.get('/student/system-config'),
-  
+
   // Sem 5 Group Management
   createGroup: (groupData) => api.post('/student/groups', groupData),
   getMyGroups: () => api.get('/student/groups'),
@@ -215,7 +215,7 @@ export const studentAPI = {
   sendGroupInvitations: (groupId, data) => api.post(`/student/groups/${groupId}/send-invitations`, data),
   acceptGroupInvitation: (groupId, inviteId) => api.post(`/student/groups/${groupId}/invite/${inviteId}/accept`),
   rejectGroupInvitation: (groupId, inviteId) => api.post(`/student/groups/${groupId}/invite/${inviteId}/reject`),
-  
+
   // Advanced Group Management (Step 6 Features)
   transferLeadership: (groupId, data) => api.post(`/student/groups/${groupId}/transfer-leadership`, data),
   finalizeGroup: (groupId) => api.post(`/student/groups/${groupId}/finalize`),
@@ -223,18 +223,18 @@ export const studentAPI = {
     // Manually construct query string to ensure parameters are sent
     const queryString = new URLSearchParams(params).toString();
     const url = `/student/groups/available-students${queryString ? '?' + queryString : ''}`;
-    
+
     return api.get(url);
   },
-  
+
   // Sem 5 Project Details
   updateProjectDetails: (projectId, details) => api.put(`/student/projects/${projectId}/details`, details),
-  
+
   // Sem 5 Faculty Preferences
   submitFacultyPreferences: (projectId, preferences) => api.post(`/student/projects/${projectId}/faculty-preferences`, preferences),
   getFacultyPreferences: (projectId) => api.get(`/student/projects/${projectId}/faculty-preferences`),
   getFacultyList: () => api.get('/student/faculty'),
-  
+
   // Sem 5 Status Tracking
   getSem5Status: (projectId) => api.get(`/student/projects/${projectId}/sem5-status`),
   getSem5Dashboard: () => api.get('/student/dashboard/sem5'),
@@ -243,15 +243,15 @@ export const studentAPI = {
   // M.Tech Sem 2 Registration
   getMTechSem2PreRegistration: () => api.get('/student/mtech/sem2/pre-registration'),
   registerMTechSem2Project: (data) => api.post('/student/mtech/sem2/register', data),
-  
+
   // Sem 6 specific methods
   getSem5GroupForSem6: () => api.get('/student/sem6/pre-registration'),
   registerSem6Project: (data) => api.post('/student/sem6/register', data),
-  
+
   // Project continuation (Sem 6)
   getContinuationProjects: () => api.get('/student/projects/continuation'),
   createContinuationProject: (data) => api.post('/student/projects/continuation', data),
-  
+
   // Sem 7 specific methods
   // Track selection
   setSem7Choice: (choice) => api.post('/sem7/choice', { chosenTrack: choice }),
@@ -260,23 +260,23 @@ export const studentAPI = {
   // M.Tech Sem 3 track selection
   getMTechSem3Choice: () => api.get('/sem3/choice'),
   setMTechSem3Choice: (choice) => api.post('/sem3/choice', { chosenTrack: choice }),
-  
+
   // Major Project 1 registration
   registerMajorProject1: (projectData) => api.post('/student/projects/major1/register', projectData),
   registerMTechSem3MajorProject: (payload) => api.post('/student/mtech/sem3/major-project/register', payload),
-  
+
   // Internship 1 status and registration
   checkInternship1Status: () => api.get('/student/projects/internship1/status'),
   registerInternship1: (projectData) => api.post('/student/projects/internship1/register', projectData),
-  
+
   // Sem 8 specific methods
   // Track selection
   setSem8Choice: (choice) => api.post('/sem8/choice', { chosenTrack: choice }),
   getSem8Choice: () => api.get('/sem8/choice'),
-  
+
   // Major Project 2 registration
   registerMajorProject2: (projectData) => api.post('/student/projects/major2/register', projectData),
-  
+
   // Internship 2 status and registration
   checkInternship2Status: () => api.get('/student/projects/internship2/status'),
   registerInternship2: (projectData) => api.post('/student/projects/internship2/register', projectData),
@@ -327,10 +327,10 @@ export const internshipAPI = {
     const formData = new FormData();
     formData.append('type', type);
     formData.append('details', JSON.stringify(details));
-    
+
     // No files needed anymore - summer internships use Google Drive links
     // Files parameter is kept for backward compatibility but not used
-    
+
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/internships/applications`, {
       method: 'POST',
@@ -339,18 +339,18 @@ export const internshipAPI = {
       },
       body: formData
     });
-    
+
     return handleApiResponse(response);
   },
-  
+
   // Get my applications
   getMyApplications: () => api.get('/internships/applications/my'),
-  
+
   // Update application (JSON - no file uploads needed anymore)
   updateApplication: async (applicationId, details, files) => {
     // Send as JSON since we're not uploading files anymore
     // All data (including Google Drive links) is sent in the request body
-    
+
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/internships/applications/${applicationId}`, {
       method: 'PATCH',
@@ -360,10 +360,10 @@ export const internshipAPI = {
       },
       body: JSON.stringify({ details })
     });
-    
+
     return handleApiResponse(response);
   },
-  
+
   // Download file
   downloadFile: (applicationId, fileType) => {
     const token = getToken();
@@ -383,7 +383,7 @@ export const facultyAPI = {
   getSem3MajorProjectRequests: () => api.get('/faculty/mtech/sem3/major-projects/pending'),
   chooseSem3MajorProject: (projectId) => api.post(`/faculty/mtech/sem3/major-projects/${projectId}/choose`),
   passSem3MajorProject: (projectId) => api.post(`/faculty/mtech/sem3/major-projects/${projectId}/pass`),
-  
+
   // Sem 4 Evaluation
   getEvaluationAssignments: () => api.get('/faculty/evaluations/assignments'),
   getSem4Students: () => api.get('/faculty/students?semester=4'),
@@ -395,10 +395,13 @@ export const facultyAPI = {
   getAllocatedGroups: () => api.get('/faculty/groups/allocated'),
   chooseGroup: (groupId) => api.post(`/faculty/groups/${groupId}/choose`),
   passGroup: (groupId) => api.post(`/faculty/groups/${groupId}/pass`),
+  respondToGroup: (preferenceId, response) =>
+    api.post(`/faculty/groups/${preferenceId}/respond`, { response }),
   getGroupDetails: (groupId) => api.get(`/faculty/groups/${groupId}`),
-  
+
   // Sem 5 Statistics
   getSem5Statistics: () => api.get('/faculty/statistics/sem5'),
+  rankInterestedGroups: (rankings) => api.post('/faculty/groups/rank-interested', { rankings }),
   getProfile: () => api.get('/faculty/profile'),
   updateProfile: (data) => api.put('/faculty/profile', data),
 
@@ -447,23 +450,24 @@ export const adminAPI = {
   disbandGroup: (groupId, data) => api.delete(`/admin/groups/${groupId}/disband`, { data }),
   allocateFacultyToGroup: (groupId, data) => api.post(`/admin/groups/${groupId}/allocate-faculty`, data),
   deallocateFacultyFromGroup: (groupId) => api.delete(`/admin/groups/${groupId}/deallocate-faculty`),
+  runAllocation: (data) => api.post('/admin/allocations/run', data || {}),
   getStats: () => api.get('/admin/stats'),
-  
+
   // Admin Profile Management
   getProfile: () => api.get('/admin/profile'),
   updateProfile: (data) => api.put('/admin/profile', data),
-  
+
   // Sem 4 Project Management
   getSem4Projects: () => api.get('/admin/projects?semester=4&type=minor1'),
   updateProjectStatus: (projectId, data) => api.put(`/admin/projects/${projectId}/status`, data),
   getUnregisteredSem4Students: () => api.get('/admin/sem4/unregistered-students'),
-  
+
   // Sem 4 Evaluation Management
   setEvaluationDates: (data) => api.post('/admin/evaluations/schedule', data),
   assignEvaluationPanel: (data) => api.post('/admin/evaluations/panel', data),
   getEvaluationSchedule: () => api.get('/admin/evaluations/schedule'),
   getSem4Statistics: () => api.get('/admin/stats?semester=4'),
-  
+
   // Sem 4 Registrations Table
   getSem4Registrations: (params) => {
     const url = new URL('/admin/sem4/registrations', API_BASE_URL);
@@ -502,6 +506,14 @@ export const adminAPI = {
     if (params) {
       Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     }
+    return apiRequest(url.href.replace(API_BASE_URL, ''));
+  },
+
+  // Generic allocated faculty — works for any semester via ?semester=X
+  getAllocatedFaculty: (semester, params = {}) => {
+    const url = new URL('/admin/allocated-faculty', API_BASE_URL);
+    url.searchParams.append('semester', semester);
+    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     return apiRequest(url.href.replace(API_BASE_URL, ''));
   },
 
@@ -552,7 +564,7 @@ export const adminAPI = {
   getAllGroups: () => api.get('/admin/groups'),
   getUnallocatedGroups: () => api.get('/admin/groups/unallocated'),
   forceAllocateFaculty: (groupId, facultyId) => api.post(`/admin/groups/${groupId}/allocate`, { facultyId }),
-  
+
   // System Configuration
   getSystemConfigurations: (category) => {
     const url = category ? `/admin/system-config?category=${category}` : '/admin/system-config';
@@ -568,11 +580,11 @@ export const adminAPI = {
     }
     return api.get(url);
   },
-  
+
   // Sem 5 Statistics
   getSem5Statistics: () => api.get('/admin/statistics/sem5'),
   getSem5Groups: () => api.get('/admin/groups/sem5'),
-  
+
   // Semester Management
   updateStudentSemesters: (data) => api.post('/admin/students/update-semesters', data),
   getStudentsBySemester: (params = {}) => {
@@ -586,7 +598,7 @@ export const adminAPI = {
     const queryString = searchParams.toString();
     return api.get(`/admin/students/by-semester${queryString ? `?${queryString}` : ''}`);
   },
-  
+
   // Sem 7 Management
   listSem7TrackChoices: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
@@ -599,7 +611,7 @@ export const adminAPI = {
   finalizeSem7Track: (studentId, data) => api.patch(`/admin/sem7/finalize/${studentId}`, data),
   listInternship1TrackChoices: () => api.get('/admin/sem7/internship1-track-choices'),
   changeInternship1Track: (studentId, data) => api.patch(`/admin/sem7/internship1-track/${studentId}`, data),
-  
+
   // Sem 8 specific methods
   listSem8TrackChoices: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
@@ -633,13 +645,13 @@ export const adminAPI = {
 export const projectAPI = {
   // Get student's current project
   getStudentCurrentProject: () => api.get('/projects/student/current'),
-  
+
   // Get faculty's allocated projects
   getFacultyAllocatedProjects: () => api.get('/projects/faculty/allocated'),
-  
+
   // Get project details
   getProjectDetails: (projectId) => api.get(`/projects/${projectId}`),
-  
+
   // Chat Messages
   getProjectMessages: (projectId, limit = 50, before) => {
     let url = `/projects/${projectId}/messages?limit=${limit}`;
@@ -657,7 +669,7 @@ export const projectAPI = {
         formData.append('files', files[i]);
       }
     }
-    
+
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}/messages`, {
       method: 'POST',
@@ -666,7 +678,7 @@ export const projectAPI = {
       },
       body: formData
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -679,7 +691,7 @@ export const projectAPI = {
   getFileUrl: (projectId, filename) => `${API_BASE_URL}/projects/${projectId}/files/${filename}`,
   scheduleMeeting: (projectId, data) => api.post(`/projects/${projectId}/meeting`, data),
   completeMeeting: (projectId, data) => api.post(`/projects/${projectId}/meeting/complete`, data),
-  
+
   // Message Reactions
   addReaction: (projectId, messageId, emoji) => api.post(`/projects/${projectId}/messages/${messageId}/reactions`, { emoji }),
   removeReaction: (projectId, messageId, emoji) => api.delete(`/projects/${projectId}/messages/${messageId}/reactions/${encodeURIComponent(emoji)}`),

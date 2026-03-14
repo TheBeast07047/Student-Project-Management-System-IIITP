@@ -9,7 +9,7 @@ import GroupMemberList from '../../components/groups/GroupMemberList';
 const AllocatedGroups = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [allocatedGroups, setAllocatedGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +47,16 @@ const AllocatedGroups = () => {
 
   const handleManageGroup = (groupId) => {
     navigate(`/faculty/groups/${groupId}/manage`);
+  };
+
+  const getAllocationMethodLabel = (allocatedBy) => {
+    switch (allocatedBy) {
+      case 'faculty_choice': return 'Faculty Choice';
+      case 'admin_allocation': return 'Admin Allocation';
+      case 'faculty_interest': return 'Faculty Interest';
+      case 'random_allocation': return 'Random Allocation';
+      default: return 'Allocated';
+    }
   };
 
   // Filter groups for current faculty
@@ -152,8 +162,8 @@ const AllocatedGroups = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg. Group Size</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {currentFacultyGroups.length > 0 ? 
-                    Math.round(currentFacultyGroups.reduce((total, group) => total + (group.members?.filter(m => m.isActive !== false).length || 0), 0) / currentFacultyGroups.length * 10) / 10 
+                  {currentFacultyGroups.length > 0 ?
+                    Math.round(currentFacultyGroups.reduce((total, group) => total + (group.members?.filter(m => m.isActive !== false).length || 0), 0) / currentFacultyGroups.length * 10) / 10
                     : 0}
                 </p>
               </div>
@@ -194,12 +204,12 @@ const AllocatedGroups = () => {
                   <div key={group._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <GroupCard 
-                          group={group} 
+                        <GroupCard
+                          group={group}
                           showActions={false}
                           userRole="faculty"
                         />
-                        
+
                         {/* Project Information */}
                         {group.project && (
                           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -231,7 +241,7 @@ const AllocatedGroups = () => {
                         {group.members && group.members.length > 0 && (
                           <div className="mt-4">
                             <h4 className="font-medium text-gray-900 mb-3">Group Members</h4>
-                            <GroupMemberList 
+                            <GroupMemberList
                               members={group.members}
                               showRoles={true}
                               showContact={true}
@@ -251,7 +261,7 @@ const AllocatedGroups = () => {
                               </span>
                             </div>
                             <span className="text-xs text-green-600">
-                              {group.allocatedBy === 'faculty_choice' ? 'Faculty Choice' : 'Admin Allocation'}
+                              {getAllocationMethodLabel(group.allocatedBy)}
                             </span>
                           </div>
                         </div>
@@ -307,14 +317,14 @@ const AllocatedGroups = () => {
                     </svg>
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
-                  <GroupCard 
-                    group={selectedGroup} 
+                  <GroupCard
+                    group={selectedGroup}
                     showActions={false}
                     userRole="faculty"
                   />
-                  
+
                   {selectedGroup.project && (
                     <div className="p-4 bg-gray-50 rounded-lg">
                       <h4 className="font-medium text-gray-900 mb-3">Project Details</h4>
@@ -353,7 +363,7 @@ const AllocatedGroups = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
                     onClick={() => setSelectedGroup(null)}

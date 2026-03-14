@@ -30,6 +30,8 @@ router.get('/groups/unallocated', facultyController.getUnallocatedGroups);
 router.get('/groups/allocated', facultyController.getAllocatedGroups);
 router.post('/groups/:groupId/choose', facultyController.chooseGroup);
 router.post('/groups/:groupId/pass', facultyController.passGroup);
+router.post('/groups/rank-interested', facultyController.rankInterestedGroups);
+router.post('/groups/:preferenceId/respond', facultyController.respondToGroup);
 router.get('/statistics/sem5', facultyController.getSem5Statistics);
 
 // M.Tech Sem 3 major project allocation routes

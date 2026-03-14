@@ -11,7 +11,7 @@ export const useSem5 = () => useContext(Sem5Context);
 export const Sem5Provider = ({ children }) => {
   const { user, userRole, roleData } = useAuth();
   const { subscribe, unsubscribe } = useWebSocket();
-  
+
   // Sem 5 State
   const [sem5Project, setSem5Project] = useState(null);
   const [sem5Group, setSem5Group] = useState(null);
@@ -19,7 +19,7 @@ export const Sem5Provider = ({ children }) => {
   const [facultyPreferences, setFacultyPreferences] = useState([]);
   const [allocationStatus, setAllocationStatus] = useState(null);
   const [systemConfig, setSystemConfig] = useState(null);
-  
+
   // Loading States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,13 +33,13 @@ export const Sem5Provider = ({ children }) => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       if (userRole === 'student') {
         // Only load Sem 5 data for Sem 5 students
         const userSemester = user.semester || roleData?.semester || user?.semester;
         const currentSemester = userSemester || 4;
-        
+
         if (currentSemester === 5) {
           await Promise.all([
             loadStudentSem5Data(),
@@ -69,7 +69,7 @@ export const Sem5Provider = ({ children }) => {
     try {
       const dashboardResponse = await studentAPI.getSem5Dashboard();
       const dashboardData = dashboardResponse.data;
-      
+
       setSem5Project(dashboardData.project);
       setSem5Group(dashboardData.group);
       setFacultyPreferences(dashboardData.facultyPreferences || []);
@@ -98,7 +98,7 @@ export const Sem5Provider = ({ children }) => {
       console.log('Invitation update received:', data);
       // Refresh invitations to reflect the latest state
       loadGroupInvitations();
-      
+
       // Show appropriate notification
       if (data.type === 'auto_rejected') {
         if (data.reason === 'Group has been finalized') {
@@ -128,7 +128,7 @@ export const Sem5Provider = ({ children }) => {
       // Refresh all data to reflect the finalization
       loadStudentSem5Data();
       loadGroupInvitations();
-      
+
       // Show notification
       toast.success('Group has been finalized successfully!');
     };
@@ -154,7 +154,7 @@ export const Sem5Provider = ({ children }) => {
         facultyAPI.getAllocatedGroups(),
         facultyAPI.getSem5Statistics()
       ]);
-      
+
       // Store faculty data in context
       setAllocationStatus({
         unallocatedGroups: unallocatedResponse.data || [],
@@ -223,11 +223,11 @@ export const Sem5Provider = ({ children }) => {
       // First get the invitation to extract groupId
       const invitations = groupInvitations || [];
       const invitation = invitations.find(inv => inv._id === invitationId);
-      
+
       if (!invitation) {
         throw new Error('Invitation not found');
       }
-      
+
       await studentAPI.acceptGroupInvitation(invitation.group._id, invitationId);
       //toast.success('Invitation accepted successfully!');
       await Promise.all([loadStudentSem5Data(), loadGroupInvitations()]);
@@ -247,9 +247,9 @@ export const Sem5Provider = ({ children }) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       //toast.error(errorMessage);
-      
+
       // Always refresh invitations after any error to reflect backend state changes
       // This handles cases like auto-rejection when group becomes full
       try {
@@ -266,11 +266,11 @@ export const Sem5Provider = ({ children }) => {
       // First get the invitation to extract groupId
       const invitations = groupInvitations || [];
       const invitation = invitations.find(inv => inv._id === invitationId);
-      
+
       if (!invitation) {
         throw new Error('Invitation not found');
       }
-      
+
       await studentAPI.rejectGroupInvitation(invitation.group._id, invitationId);
       //toast.success('Invitation rejected');
       await loadGroupInvitations();
@@ -284,7 +284,7 @@ export const Sem5Provider = ({ children }) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       //toast.error(errorMessage);
       throw error;
     }
@@ -320,6 +320,21 @@ export const Sem5Provider = ({ children }) => {
       await loadFacultySem5Data();
     } catch (error) {
       toast.error(`Failed to pass group: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const respondToGroup = async (preferenceId, response) => {
+    try {
+      await facultyAPI.respondToGroup(preferenceId, response);
+      toast.success(
+        response === 'interested'
+          ? 'Marked as interested'
+          : 'Marked as not interested'
+      );
+      await loadFacultySem5Data();
+    } catch (error) {
+      toast.error(`Failed to record response: ${error.message}`);
       throw error;
     }
   };
@@ -375,6 +390,7 @@ export const Sem5Provider = ({ children }) => {
     // Faculty Actions
     chooseGroup,
     passGroup,
+    respondToGroup,
 
     // Admin Actions
     forceAllocateFaculty,

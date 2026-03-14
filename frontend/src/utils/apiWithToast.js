@@ -180,18 +180,18 @@ export const studentAPIWithToast = {
 
   acceptGroupInvitation: async (groupId, inviteId) => {
     return apiWithToast.request(
-    studentAPI.acceptGroupInvitation(groupId, inviteId),
-    null, // Remove success toast message
-    'Failed to accept invitation'
-   );
+      studentAPI.acceptGroupInvitation(groupId, inviteId),
+      null, // Remove success toast message
+      'Failed to accept invitation'
+    );
   },
 
   rejectGroupInvitation: async (groupId, inviteId) => {
-  return apiWithToast.request(
-    studentAPI.rejectGroupInvitation(groupId, inviteId),
-    null, // Remove success toast message
-    'Failed to reject invitation'
-  );
+    return apiWithToast.request(
+      studentAPI.rejectGroupInvitation(groupId, inviteId),
+      null, // Remove success toast message
+      'Failed to reject invitation'
+    );
   },
 
   transferLeadership: async (groupId, data) => {
@@ -288,6 +288,14 @@ export const facultyAPIWithToast = {
     );
   },
 
+  respondToGroup: async (preferenceId, response) => {
+    return apiWithToast.request(
+      facultyAPI.respondToGroup(preferenceId, response),
+      'Response recorded successfully',
+      'Failed to record response'
+    );
+  },
+
   // Non-toast methods
   getDashboard: facultyAPI.getDashboard,
   getStudents: facultyAPI.getStudents,
@@ -336,6 +344,14 @@ export const adminAPIWithToast = {
       adminAPI.forceAllocateFaculty(groupId, facultyId),
       'Faculty allocated successfully',
       'Failed to allocate faculty'
+    );
+  },
+
+  runAllocation: async (data) => {
+    return apiWithToast.request(
+      adminAPI.runAllocation(data),
+      'Allocation process completed successfully',
+      'Failed to run allocation'
     );
   },
 

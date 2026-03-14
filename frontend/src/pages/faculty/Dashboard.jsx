@@ -1,13 +1,92 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAuth } from '../../context/AuthContext';
 import { useSem5 } from '../../context/Sem5Context';
 import { facultyAPI } from '../../utils/api';
 
+// Draggable individual item component
+const SortableRankItem = ({ id, group, index, disabled }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id, disabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 2 : 1,
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white border ${isDragging ? 'border-indigo-500 shadow-md' : 'border-gray-200 shadow-sm'} ${disabled ? 'opacity-80' : 'hover:border-indigo-300 cursor-grab active:cursor-grabbing'} rounded-lg transition-colors`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className={`flex-shrink-0 p-2 ${disabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-indigo-500'}`}
+        title={disabled ? "Deadline passed" : "Drag to reorder"}
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </div>
+
+      <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 text-indigo-800 font-bold border border-indigo-200 flex-shrink-0 text-lg">
+          {index + 1}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-gray-900 truncate">{group.groupName}</h4>
+          <p className="text-sm text-gray-600 truncate">{group.projectTitle}</p>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0 flex items-center justify-between w-full sm:w-auto">
+        <span className="text-xs font-medium text-gray-500 hidden sm:inline-block mr-2">
+          Sem {group.semester}
+        </span>
+        {group.groupRank === index + 1 ? (
+          <span className="text-xs font-medium px-2.5 py-1.5 bg-green-100 text-green-800 rounded-full flex items-center gap-1.5 w-full sm:w-auto justify-center">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Saved
+          </span>
+        ) : (
+          <span className="text-xs font-medium px-2.5 py-1.5 bg-amber-100 text-amber-800 rounded-full flex items-center gap-1.5 w-full sm:w-auto justify-center border border-amber-200">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            Unsaved Change
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const FacultyDashboard = () => {
   const { user, roleData, isLoading: authLoading } = useAuth();
-  const { allocationStatus, chooseGroup, passGroup, loading } = useSem5();
+  const { allocationStatus, respondToGroup, loading } = useSem5();
   const [activeTab, setActiveTab] = useState(() => {
     // Get saved tab from localStorage, default to 'allocated' for new users
     return localStorage.getItem('facultyDashboardTab') || 'allocated';
@@ -16,6 +95,83 @@ const FacultyDashboard = () => {
   const [sem3Requests, setSem3Requests] = useState([]);
   const [sem3Loading, setSem3Loading] = useState(true);
   const [sem3ActionLoading, setSem3ActionLoading] = useState({});
+  const [savingRank, setSavingRank] = useState(false);
+
+  // Define groups early so hooks can access them before the early return
+  const unallocatedGroups = allocationStatus?.unallocatedGroups || [];
+  const allocatedGroups = allocationStatus?.allocatedGroups || [];
+  const statistics = allocationStatus?.statistics || {};
+
+  // Derived state: groups marked 'interested' and not yet allocated (still pending)
+  // Dashboard uses context, so we read unallocatedGroups directly
+  const interestedGroups = useMemo(() => {
+    return (unallocatedGroups || [])
+      .filter(g => g.myResponse === 'interested')
+      .sort((a, b) => {
+        if (a.groupRank !== null && b.groupRank !== null) return a.groupRank - b.groupRank;
+        if (a.groupRank !== null) return -1;
+        if (b.groupRank !== null) return 1;
+        return 0;
+      });
+  }, [unallocatedGroups]);
+
+  const [localRankings, setLocalRankings] = useState([]);
+
+  // Sync local rankings when interested groups change
+  useEffect(() => {
+    setLocalRankings(prevRankings => {
+      const newIds = interestedGroups.map(g => g.id);
+      if (prevRankings.length === newIds.length && prevRankings.every(id => newIds.includes(id))) {
+        return prevRankings;
+      }
+      const existing = prevRankings.filter(id => newIds.includes(id));
+      const added = newIds.filter(id => !existing.includes(id));
+      return [...existing, ...added];
+    });
+  }, [interestedGroups.length]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // 5px movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLocalRankings((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const saveRankings = async () => {
+    try {
+      setSavingRank(true);
+      await facultyAPI.rankInterestedGroups(localRankings);
+      toast.success('Group rankings saved successfully');
+
+      // Update local state by forcing a refresh of the context
+      if (typeof allocationStatus?.refresh === 'function') {
+        allocationStatus.refresh();
+      } else {
+        // Fallback if no explicit refresh: just reload the window for simplicity since dashboard uses context wrapper
+        window.location.reload();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save rankings');
+    } finally {
+      setSavingRank(false);
+    }
+  };
 
   // Show loading screen if authentication is loading
   if (authLoading || !user) {
@@ -29,10 +185,7 @@ const FacultyDashboard = () => {
     );
   }
 
-  // Get data from context
-  const unallocatedGroups = allocationStatus?.unallocatedGroups || [];
-  const allocatedGroups = allocationStatus?.allocatedGroups || [];
-  const statistics = allocationStatus?.statistics || {};
+  // Get data from context (moved to top of component)
 
   const loadSem3Requests = async () => {
     try {
@@ -50,9 +203,9 @@ const FacultyDashboard = () => {
   useEffect(() => {
     loadSem3Requests();
   }, []);
-  
+
   // No debugging code needed
-  
+
   // Helper function to categorize groups by semester and project type
   const categorizeGroups = (groups) => {
     // First, group by semester
@@ -64,14 +217,14 @@ const FacultyDashboard = () => {
       acc[semester].push(group);
       return acc;
     }, {});
-    
+
     // Then within each semester, group by project type
     const categorized = Object.entries(bySemester).map(([semester, semesterGroups]) => {
       // Group by project type
       const byProjectType = semesterGroups.reduce((acc, group) => {
         // Get project type from the group or project object
         let projectType = 'Unknown';
-        
+
         // Try to determine project type from various properties
         if (group.projectType) {
           projectType = group.projectType;
@@ -93,7 +246,7 @@ const FacultyDashboard = () => {
           // For Semester 8, it's typically Major Project 2
           projectType = 'major2';
         }
-        
+
         // Format project type for display
         let displayName = projectType;
         switch (projectType.toLowerCase()) {
@@ -121,13 +274,13 @@ const FacultyDashboard = () => {
           default:
             displayName = projectType || 'Unknown';
         }
-        
+
         // For Major Project 2, create subsections for group and solo
         if (projectType === 'major2') {
           // Use a composite key to separate group and solo
           const subType = group.isMajor2Solo ? 'major2-solo' : 'major2-group';
           const subDisplayName = group.isMajor2Solo ? 'Solo Major Project II' : 'Group Major Project II';
-          
+
           if (!acc[subType]) {
             acc[subType] = {
               displayName: subDisplayName,
@@ -151,12 +304,12 @@ const FacultyDashboard = () => {
         }
         return acc;
       }, {});
-      
+
       // Group Major Project 2 subsections together
       const projectTypesArray = Object.values(byProjectType);
       const major2Subsections = projectTypesArray.filter(pt => pt.projectType === 'major2' && pt.isSubsection);
       const otherProjectTypes = projectTypesArray.filter(pt => pt.projectType !== 'major2' || !pt.isSubsection);
-      
+
       // If we have Major Project 2 subsections, create a parent section
       if (major2Subsections.length > 0) {
         const major2Parent = {
@@ -172,13 +325,13 @@ const FacultyDashboard = () => {
           projectTypes: [major2Parent, ...otherProjectTypes]
         };
       }
-      
+
       return {
         semester,
         projectTypes: projectTypesArray
       };
     });
-    
+
     // Sort by semester (numerically)
     return categorized.sort((a, b) => {
       const semA = parseInt(a.semester);
@@ -186,12 +339,12 @@ const FacultyDashboard = () => {
       return !isNaN(semA) && !isNaN(semB) ? semA - semB : 0;
     });
   };
-  
+
   // Organize groups by semester and project type
-  const categorizedUnallocatedGroups = useMemo(() => 
+  const categorizedUnallocatedGroups = useMemo(() =>
     categorizeGroups(unallocatedGroups), [unallocatedGroups]);
-  
-  const categorizedAllocatedGroups = useMemo(() => 
+
+  const categorizedAllocatedGroups = useMemo(() =>
     categorizeGroups(allocatedGroups), [allocatedGroups]);
 
   // Handle tab change and save to localStorage
@@ -231,48 +384,28 @@ const FacultyDashboard = () => {
   };
 
   const handleChooseGroup = async (groupId) => {
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      'Are you sure you want to allocate this group to yourself?\n\n' +
-      'This action will:\n' +
-      '• Assign the group to you for supervision\n' +
-      '• Remove the group from other faculty consideration\n' +
-      '• Lock the group allocation\n\n' +
-      'This action cannot be undone.'
-    );
-    
-    if (!confirmed) return;
-
+    // No confirmation needed — marking interested does not allocate immediately.
+    // Faculty can change their response before the deadline.
     setActionLoading(prev => ({ ...prev, [`choose-${groupId}`]: true }));
     try {
-      await chooseGroup(groupId);
+      await respondToGroup(groupId, 'interested');
       // The context will automatically refresh the data
     } catch (error) {
-      console.error('Error choosing group:', error);
+      console.error('Error responding to group:', error);
     } finally {
       setActionLoading(prev => ({ ...prev, [`choose-${groupId}`]: false }));
     }
   };
 
   const handlePassGroup = async (groupId) => {
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      'Are you sure you want to pass this group to the next faculty?\n\n' +
-      'This action will:\n' +
-      '• Move the group to the next faculty in the preference list\n' +
-      '• Record your decision to pass on this group\n' +
-      '• Continue the allocation process\n\n' +
-      'If all faculty pass, the group will be sent to admin for manual allocation.'
-    );
-    
-    if (!confirmed) return;
-
+    // No confirmation needed — marking not interested is reversible
+    // before the deadline.
     setActionLoading(prev => ({ ...prev, [`pass-${groupId}`]: true }));
     try {
-      await passGroup(groupId);
+      await respondToGroup(groupId, 'not_interested');
       // The context will automatically refresh the data
     } catch (error) {
-      console.error('Error passing group:', error);
+      console.error('Error responding to group:', error);
     } finally {
       setActionLoading(prev => ({ ...prev, [`pass-${groupId}`]: false }));
     }
@@ -280,80 +413,208 @@ const FacultyDashboard = () => {
 
   const GroupCard = ({ group, isAllocated = false }) => {
     const cardContent = (
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{group.groupName}</h3>
-          <p className="text-sm text-gray-600 mt-1">{group.projectTitle}</p>
+      <div className={`rounded-lg shadow-md p-6 transition-all ${group.myResponse === 'interested'
+        ? 'bg-green-50/30 border-2 border-green-400 shadow-sm'
+        : group.myResponse === 'not_interested'
+          ? 'bg-red-50/20 border-2 border-red-300 shadow-sm'
+          : 'bg-white border border-gray-200 hover:shadow-lg'
+        }`}>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{group.groupName}</h3>
+            <p className="text-sm text-gray-600 mt-1">{group.projectTitle}</p>
+          </div>
+          <div className="text-right">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Sem {group.semester}
+            </span>
+            <p className="text-xs text-gray-500 mt-1">{group.academicYear}</p>
+          </div>
         </div>
-        <div className="text-right">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            Sem {group.semester}
-          </span>
-          <p className="text-xs text-gray-500 mt-1">{group.academicYear}</p>
-        </div>
-      </div>
 
-      <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Group Members</h4>
-        <div className="space-y-1">
-          {group.members?.filter(m => m.isActive !== false).map((member, index) => (
-            <div key={index} className="flex justify-between text-sm">
-              <span className="text-gray-900">{member.name || member.student?.fullName}</span>
-              <span className="text-gray-500">{member.misNumber || member.student?.misNumber} • {member.role}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {!isAllocated && group.preferences && (
         <div className="mb-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Faculty Preferences</h4>
-          <div className="flex flex-wrap gap-2">
-            {group.preferences.map((faculty, index) => (
-              <span
-                key={index}
-                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                  index === group.currentPreference - 1
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {faculty}
-                {index === group.currentPreference - 1 && ' (Current)'}
-              </span>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Group Members</h4>
+          <div className="space-y-1">
+            {group.members?.filter(m => m.isActive !== false).map((member, index) => (
+              <div key={index} className="flex justify-between text-sm">
+                <span className="text-gray-900">{member.name || member.student?.fullName}</span>
+                <span className="text-gray-500">{member.misNumber || member.student?.misNumber} • {member.role}</span>
+              </div>
             ))}
           </div>
         </div>
-      )}
 
-      {isAllocated && (
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Allocated on:</span> {group.allocatedDate}
-          </p>
-        </div>
-      )}
+        {!isAllocated && group.preferences && (
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Faculty Preferences</h4>
+            <div className="flex flex-wrap gap-2">
+              {group.preferences.map((faculty, index) => (
+                <span
+                  key={index}
+                  className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${index === group.currentPreference - 1
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-600'
+                    }`}
+                >
+                  {faculty}
+                  {index === group.currentPreference - 1 && ' (Current)'}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {!isAllocated && (
-        <div className="flex space-x-3">
-          <button
-            onClick={() => handleChooseGroup(group.id)}
-            disabled={actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`]}
-            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading[`choose-${group.id}`] ? 'Choosing...' : 'Choose Group'}
-          </button>
-          <button
-            onClick={() => handlePassGroup(group.id)}
-            disabled={actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`]}
-            className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {actionLoading[`pass-${group.id}`] ? 'Passing...' : 'Pass Group'}
-          </button>
-        </div>
-      )}
-    </div>
+        {isAllocated && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">Allocated on:</span> {group.allocatedDate}
+            </p>
+          </div>
+        )}
+
+        {/* Deadline display for unallocated groups */}
+        {!isAllocated && group.allocationDeadline && (() => {
+          const deadline = new Date(group.allocationDeadline);
+          const now = new Date();
+          const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+          const isPast = hoursLeft < 0;
+          const isUrgent = !isPast && hoursLeft < 24;
+          return (
+            <div className={`mb-3 flex items-center gap-1.5 text-xs px-2 py-1 rounded ${isPast ? 'bg-red-50 text-red-600' : isUrgent ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-500'
+              }`}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {isPast
+                ? 'Response deadline passed'
+                : `Respond by ${deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} ${deadline.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`}
+            </div>
+          );
+        })()}
+
+        {/* Action Buttons with deadline awareness */}
+        {(() => {
+          const isDeadlinePassed = !isAllocated && group.allocationDeadline && new Date(group.allocationDeadline) < new Date();
+
+          if (isAllocated) return null;
+
+          if (isDeadlinePassed) {
+            return (
+              <div className="space-y-2">
+                {group.myResponse && (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${group.myResponse === 'interested'
+                    ? 'bg-green-100 border border-green-300'
+                    : 'bg-red-100 border border-red-300'
+                    }`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${group.myResponse === 'interested' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                      }`}>
+                      {group.myResponse === 'interested' ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-sm font-medium ${group.myResponse === 'interested' ? 'text-green-800' : 'text-red-800'
+                      }`}>
+                      {group.myResponse === 'interested' ? 'You marked Interested' : 'You marked Not Interested'}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 border border-gray-300">
+                  <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-sm text-gray-600">
+                    Deadline passed — awaiting admin allocation
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
+          if (group.myResponse) {
+            return (
+              <div className="space-y-3">
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${group.myResponse === 'interested'
+                  ? 'bg-green-100 border border-green-300'
+                  : 'bg-red-100 border border-red-300'
+                  }`}>
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${group.myResponse === 'interested'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-red-500 text-white'
+                    }`}>
+                    {group.myResponse === 'interested' ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`font-semibold text-sm ${group.myResponse === 'interested' ? 'text-green-800' : 'text-red-800'}`}>
+                      {group.myResponse === 'interested' ? 'You are interested in this group' : 'You declined this group'}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${group.myResponse === 'interested' ? 'text-green-600' : 'text-red-600'}`}>
+                      {group.myResponse === 'interested'
+                        ? 'You will be considered during allocation.'
+                        : 'This group will not be allocated to you.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => group.myResponse === 'interested'
+                    ? handlePassGroup(group.id)
+                    : handleChooseGroup(group.id)
+                  }
+                  disabled={actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`]}
+                  className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors border ${group.myResponse === 'interested'
+                    ? 'border-red-300 text-red-700 bg-white hover:bg-red-50'
+                    : 'border-green-300 text-green-700 bg-white hover:bg-green-50'
+                    } disabled:opacity-50`}
+                >
+                  {(actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`])
+                    ? 'Updating...'
+                    : group.myResponse === 'interested'
+                      ? 'Change to Not Interested'
+                      : 'Change to Interested'}
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleChooseGroup(group.id)}
+                disabled={actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`]}
+                className="flex-1 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {actionLoading[`choose-${group.id}`] ? 'Processing...' : 'Interested'}
+              </button>
+              <button
+                onClick={() => handlePassGroup(group.id)}
+                disabled={actionLoading[`choose-${group.id}`] || actionLoading[`pass-${group.id}`]}
+                className="flex-1 bg-white text-red-600 px-4 py-2.5 rounded-lg text-sm font-medium border-2 border-red-300 hover:bg-red-50 hover:border-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                {actionLoading[`pass-${group.id}`] ? 'Processing...' : 'Not Interested'}
+              </button>
+            </div>
+          );
+        })()}
+      </div>
     );
 
     // If allocated, wrap in Link to project details
@@ -377,13 +638,13 @@ const FacultyDashboard = () => {
           Faculty Dashboard
         </h1>
         <p className="text-gray-600 mt-2">
-          Welcome, {roleData?.fullName ? 
-            (roleData.fullName.charAt(0).toUpperCase() + roleData.fullName.slice(1)) : 
-            user?.fullName ? 
+          Welcome, {roleData?.fullName ?
+            (roleData.fullName.charAt(0).toUpperCase() + roleData.fullName.slice(1)) :
+            user?.fullName ?
               (user.fullName.charAt(0).toUpperCase() + user.fullName.slice(1)) :
-            user?.email?.split('@')[0] ? 
-              (user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1)) : 
-              'Faculty Member'}! Manage your project groups and student allocations
+              user?.email?.split('@')[0] ?
+                (user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1)) :
+                'Faculty Member'}! Manage your project groups and student allocations
         </p>
       </div>
 
@@ -482,14 +743,14 @@ const FacultyDashboard = () => {
                         disabled={sem3ActionLoading[request._id]}
                         className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {sem3ActionLoading[request._id] === 'choose' ? 'Assigning...' : 'Choose Project'}
+                        {sem3ActionLoading[request._id] === 'choose' ? 'Processing...' : 'Interested'}
                       </button>
                       <button
                         onClick={() => handleSem3Pass(request._id)}
                         disabled={sem3ActionLoading[request._id]}
                         className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {sem3ActionLoading[request._id] === 'pass' ? 'Passing...' : 'Pass Project'}
+                        {sem3ActionLoading[request._id] === 'pass' ? 'Processing...' : 'Not Interested'}
                       </button>
                     </div>
                   </div>
@@ -506,11 +767,10 @@ const FacultyDashboard = () => {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => handleTabChange('allocated')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'allocated'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'allocated'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               My Allocated Groups
               <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">
@@ -519,11 +779,10 @@ const FacultyDashboard = () => {
             </button>
             <button
               onClick={() => handleTabChange('unallocated')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'unallocated'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'unallocated'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Unallocated Groups
               <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">
@@ -532,7 +791,7 @@ const FacultyDashboard = () => {
             </button>
           </nav>
         </div>
-          </div>
+      </div>
 
       {/* Content Area */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -544,7 +803,7 @@ const FacultyDashboard = () => {
                 Groups that have been allocated to you for supervision.
               </p>
             </div>
-            
+
             {allocatedGroups.length > 0 ? (
               <div className="space-y-8">
                 {categorizedAllocatedGroups.map((semesterData) => (
@@ -554,7 +813,7 @@ const FacultyDashboard = () => {
                       <h3 className="text-xl font-semibold text-gray-900 pb-2 border-b border-gray-200 mb-4">
                         Semester {semesterData.semester}
                       </h3>
-                      
+
                       <div className="space-y-8">
                         {semesterData.projectTypes.map((projectType) => {
                           // Handle Major Project 2 parent with subsections
@@ -568,7 +827,7 @@ const FacultyDashboard = () => {
                                     ({totalGroups} {totalGroups === 1 ? 'project' : 'projects'})
                                   </span>
                                 </h4>
-                                
+
                                 {/* Render subsections */}
                                 <div className="space-y-6 ml-6">
                                   {projectType.subsections.map((subsection) => (
@@ -580,7 +839,7 @@ const FacultyDashboard = () => {
                                             ({subsection.groups.length} {subsection.groups.length === 1 ? 'project' : 'projects'})
                                           </span>
                                         </h5>
-                                        
+
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ml-4">
                                           {subsection.groups.map((group) => (
                                             <GroupCard key={group.id} group={group} isAllocated={true} />
@@ -593,7 +852,7 @@ const FacultyDashboard = () => {
                               </div>
                             );
                           }
-                          
+
                           // Regular project type rendering
                           return (
                             // Only show project types that have groups
@@ -605,7 +864,7 @@ const FacultyDashboard = () => {
                                     ({projectType.groups.length} group{projectType.groups.length !== 1 ? 's' : ''})
                                   </span>
                                 </h4>
-                                
+
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {projectType.groups.map((group) => (
                                     <GroupCard key={group.id} group={group} isAllocated={true} />
@@ -636,13 +895,65 @@ const FacultyDashboard = () => {
 
         {activeTab === 'unallocated' && (
           <div className="p-6">
+
+            {/* Ranking UI (Only show if there are multiple interested groups) */}
+            {interestedGroups.length > 1 && (() => {
+              const isRankingDisabled = interestedGroups.some(g => g.allocationDeadline && new Date(g.allocationDeadline) < new Date());
+              return (
+                <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-100 mb-8">
+                  <div className="px-6 py-4 border-b border-indigo-100 bg-indigo-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-indigo-900">Rank Your Preferred Groups</h2>
+                      <p className="text-indigo-700 mt-1 text-sm">
+                        {isRankingDisabled
+                          ? 'The response deadline has passed. You can no longer change your group preferences.'
+                          : 'You are interested in multiple groups. Order them by preference to influence the stable matching algorithm. Rank 1 is your most preferred group.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={saveRankings}
+                      disabled={savingRank || isRankingDisabled}
+                      className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {savingRank ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Saving...
+                        </>
+                      ) : 'Save Rankings'}
+                    </button>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={localRankings}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {localRankings.map((groupId, index) => {
+                            const group = interestedGroups.find(g => g.id === groupId);
+                            if (!group) return null;
+                            return <SortableRankItem key={groupId} id={groupId} group={group} index={index} disabled={isRankingDisabled} />;
+                          })}
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Groups Awaiting Your Decision</h3>
               <p className="text-gray-600 text-sm">
                 These groups have selected you as their current preference. You can choose to allocate them to yourself or pass them to the next faculty in their preference list.
               </p>
             </div>
-            
+
             {unallocatedGroups.length > 0 ? (
               <div className="space-y-8">
                 {categorizedUnallocatedGroups.map((semesterData) => (
@@ -652,7 +963,7 @@ const FacultyDashboard = () => {
                       <h3 className="text-xl font-semibold text-gray-900 pb-2 border-b border-gray-200 mb-4">
                         Semester {semesterData.semester}
                       </h3>
-                      
+
                       <div className="space-y-8">
                         {semesterData.projectTypes.map((projectType) => {
                           // Handle Major Project 2 parent with subsections
@@ -666,7 +977,7 @@ const FacultyDashboard = () => {
                                     ({totalGroups} {totalGroups === 1 ? 'project' : 'projects'})
                                   </span>
                                 </h4>
-                                
+
                                 {/* Render subsections */}
                                 <div className="space-y-6 ml-6">
                                   {projectType.subsections.map((subsection) => (
@@ -678,7 +989,7 @@ const FacultyDashboard = () => {
                                             ({subsection.groups.length} {subsection.groups.length === 1 ? 'project' : 'projects'})
                                           </span>
                                         </h5>
-                                        
+
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ml-4">
                                           {subsection.groups.map((group) => (
                                             <GroupCard key={group.id} group={group} />
@@ -691,7 +1002,7 @@ const FacultyDashboard = () => {
                               </div>
                             );
                           }
-                          
+
                           // Regular project type rendering
                           return (
                             // Only show project types that have groups
@@ -703,7 +1014,7 @@ const FacultyDashboard = () => {
                                     ({projectType.groups.length} group{projectType.groups.length !== 1 ? 's' : ''})
                                   </span>
                                 </h4>
-                                
+
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {projectType.groups.map((group) => (
                                     <GroupCard key={group.id} group={group} />

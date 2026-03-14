@@ -26,20 +26,20 @@ const FacultyPreferences = () => {
     const loadSystemConfig = async () => {
       try {
         setIsLoading(true);
-        
+
         // Load Sem 5 faculty preference limit and allowed faculty types
         const [limitResponse, allowedTypesResponse] = await Promise.all([
           studentAPI.getSystemConfig('sem5.facultyPreferenceLimit'),
           studentAPI.getSystemConfig('sem5.minor2.allowedFacultyTypes')
         ]);
-        
+
         if (limitResponse.success && limitResponse.data) {
           const limitValue = limitResponse.data.value || limitResponse.data.configValue;
           if (limitValue !== undefined && limitValue !== null) {
             setFacultyPreferenceLimit(limitValue);
           }
         }
-        
+
         if (allowedTypesResponse.success && allowedTypesResponse.data?.value && Array.isArray(allowedTypesResponse.data.value)) {
           setAllowedFacultyTypes(allowedTypesResponse.data.value);
         }
@@ -55,10 +55,10 @@ const FacultyPreferences = () => {
   }, []);
 
   // Check if user can submit faculty preferences
-  const canSubmitPreferences = 
-    isGroupLeader && 
-    sem5Group && 
-    sem5Group.status === 'complete' && 
+  const canSubmitPreferences =
+    isGroupLeader &&
+    sem5Group &&
+    sem5Group.status === 'complete' &&
     systemConfig &&
     facultyPreferenceLimit;
 
@@ -79,7 +79,7 @@ const FacultyPreferences = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       const preferences = selectedFaculties.map(item => ({
         faculty: item.faculty._id,
         priority: item.priority
@@ -91,7 +91,7 @@ const FacultyPreferences = () => {
       }
 
       await submitFacultyPreferences(targetProjectId, preferences);
-      
+
       toast.success('Faculty preferences submitted successfully!');
       navigate('/dashboard/student');
     } catch (error) {
@@ -133,13 +133,13 @@ const FacultyPreferences = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Cannot Submit Faculty Preferences</h3>
             <p className="text-gray-600 mb-4">
-              {!isGroupLeader 
+              {!isGroupLeader
                 ? "Only the group leader can submit faculty preferences."
-                : !sem5Group 
-                ? "You need to be in a group to submit faculty preferences."
-                : sem5Group.status !== 'complete'
-                ? "Your group must be complete before submitting faculty preferences."
-                : "System configuration is not available."
+                : !sem5Group
+                  ? "You need to be in a group to submit faculty preferences."
+                  : sem5Group.status !== 'complete'
+                    ? "Your group must be complete before submitting faculty preferences."
+                    : "System configuration is not available."
               }
             </p>
             <button
@@ -253,11 +253,10 @@ const FacultyPreferences = () => {
                         </p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      item.faculty.mode === 'Regular' ? 'bg-green-100 text-green-800' :
-                      item.faculty.mode === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
-                      'bg-orange-100 text-orange-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${item.faculty.mode === 'Regular' ? 'bg-green-100 text-green-800' :
+                        item.faculty.mode === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
+                          'bg-orange-100 text-orange-800'
+                      }`}>
                       {item.faculty.mode}
                     </span>
                   </div>
@@ -301,7 +300,7 @@ const FacultyPreferences = () => {
             <p>• <strong>Priority Order:</strong> Faculty will be contacted in the order of your preferences</p>
             <p>• <strong>Faculty Types:</strong> You can select from {allowedFacultyTypes.join(', ')} faculty</p>
             <p>• <strong>Selection Limit:</strong> You can select up to {facultyPreferenceLimit} faculty members</p>
-            <p>• <strong>Allocation Process:</strong> Faculty will receive your group details and can choose to accept or pass</p>
+            <p>• <strong>Allocation Process:</strong> Faculty will receive your group details and submit their interest. Allocation happens after the response deadline.</p>
             <p>• <strong>Next Steps:</strong> After submission, wait for faculty allocation results</p>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import Layout from '../../components/common/Layout';
 import StatusBadge from '../../components/common/StatusBadge';
 import { formatFacultyName } from '../../utils/formatUtils';
+import AllocationRunner from '../../components/admin/AllocationRunner';
 
 const INTERNSHIP_STATUS_MAP = {
   submitted: { status: 'info', text: 'Submitted' },
@@ -16,12 +17,12 @@ const INTERNSHIP_STATUS_MAP = {
 
 const Sem7Review = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', '6month', 'summer', 'major1'
-  
+
   // Internship Applications State
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [appFilterStatus, setAppFilterStatus] = useState('all');
-  
+
   const [sem7Students, setSem7Students] = useState([]);
 
   // Track & Project Registrations State
@@ -32,7 +33,7 @@ const Sem7Review = () => {
   const [maxInternship1Preferences, setMaxInternship1Preferences] = useState(5); // Dynamic max calculated from actual project data
   const [major1FacultyPreferenceLimit, setMajor1FacultyPreferenceLimit] = useState(5); // Config limit for Major Project 1
   const [maxMajor1Preferences, setMaxMajor1Preferences] = useState(5); // Dynamic max calculated from actual Major Project 1 data
-  
+
   // Common State
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -42,7 +43,7 @@ const Sem7Review = () => {
     status: 'submitted',
     remarks: ''
   });
-  
+
   // State for inline remarks editing
   const [editingRemarks, setEditingRemarks] = useState({ id: null, type: null, value: '' });
   const [savingRemarks, setSavingRemarks] = useState(false);
@@ -114,7 +115,7 @@ const Sem7Review = () => {
         adminAPI.getSystemConfigByKey('sem7.internship1.facultyPreferenceLimit').catch(() => ({ success: false, data: null })),
         adminAPI.getSystemConfigByKey('sem7.major1.facultyPreferenceLimit').catch(() => ({ success: false, data: null }))
       ]);
-      
+
       if (appResponse.success) {
         setApplications(appResponse.data || []);
       }
@@ -130,7 +131,7 @@ const Sem7Review = () => {
       if (majorProjectsResponse.success) {
         const major1Data = majorProjectsResponse.data || [];
         setMajorProjectProjects(major1Data);
-        
+
         // Calculate maximum number of faculty preferences actually present in Major Project 1 data
         let maxPrefs = 0;
         major1Data.forEach(project => {
@@ -143,8 +144,8 @@ const Sem7Review = () => {
         });
         // Use the maximum found in data, or config limit (whichever is higher)
         // This ensures we show all preferences even if some projects have more than the current config limit
-        const configLimit = (major1ConfigResponse.success && major1ConfigResponse.data?.value) 
-          ? parseInt(major1ConfigResponse.data.value, 10) || 5 
+        const configLimit = (major1ConfigResponse.success && major1ConfigResponse.data?.value)
+          ? parseInt(major1ConfigResponse.data.value, 10) || 5
           : 5;
         setMajor1FacultyPreferenceLimit(configLimit);
         setMaxMajor1Preferences(Math.max(maxPrefs || 0, configLimit, 5)); // At least 5, or max found in data
@@ -160,7 +161,7 @@ const Sem7Review = () => {
       if (internshipProjectsResponse.success) {
         const internship1Data = internshipProjectsResponse.data || [];
         setInternship1Projects(internship1Data);
-        
+
         // Calculate maximum number of faculty preferences actually present in the data
         let maxPrefs = 0;
         internship1Data.forEach(project => {
@@ -171,8 +172,8 @@ const Sem7Review = () => {
         });
         // Use the maximum found in data, or config limit (whichever is higher)
         // This ensures we show all preferences even if some projects have more than the current config limit
-        const configLimit = (internshipConfigResponse.success && internshipConfigResponse.data?.value) 
-          ? parseInt(internshipConfigResponse.data.value, 10) || 5 
+        const configLimit = (internshipConfigResponse.success && internshipConfigResponse.data?.value)
+          ? parseInt(internshipConfigResponse.data.value, 10) || 5
           : 5;
         setFacultyPreferenceLimit(configLimit);
         setMaxInternship1Preferences(Math.max(maxPrefs || 0, configLimit, 5)); // At least 5, or max found in data
@@ -220,19 +221,19 @@ const Sem7Review = () => {
     filtered.sort((a, b) => {
       const emailA = (a.student?.collegeEmail || '').toLowerCase();
       const emailB = (b.student?.collegeEmail || '').toLowerCase();
-      
+
       if (emailA && emailB) {
         return emailA.localeCompare(emailB);
       }
-      
+
       // If email is missing, sort by MIS number
       const misA = a.student?.misNumber || '';
       const misB = b.student?.misNumber || '';
-      
+
       if (misA && misB) {
         return misA.localeCompare(misB);
       }
-      
+
       // If both missing, maintain original order
       return 0;
     });
@@ -252,12 +253,12 @@ const Sem7Review = () => {
   const handleSubmitReview = async () => {
     try {
       setIsSubmitting(true);
-      
+
       const response = await adminAPI.reviewInternshipApplication(selectedItem._id, {
         status: reviewData.status,
         adminRemarks: reviewData.remarks
       });
-      
+
       if (response.success) {
         toast.success('Internship application reviewed successfully');
         setShowModal(false);
@@ -343,9 +344,9 @@ const Sem7Review = () => {
     try {
       setSavingRemarks(true);
       // Pass current status to avoid validation error, but only update remarks
-      const response = await adminAPI.reviewInternshipApplication(applicationId, { 
+      const response = await adminAPI.reviewInternshipApplication(applicationId, {
         status: currentStatus || 'submitted', // Pass current status to avoid validation error
-        adminRemarks: remarks 
+        adminRemarks: remarks
       });
       if (response.success) {
         toast.success('Remarks saved successfully');
@@ -366,7 +367,7 @@ const Sem7Review = () => {
   const renderRemarksCell = (id, type, currentValue) => {
     const isEditing = editingRemarks.id === id && editingRemarks.type === type;
     const canEdit = !!id; // Only allow editing if ID exists
-    
+
     if (isEditing) {
       return (
         <td className="px-3 py-2 text-sm">
@@ -425,12 +426,11 @@ const Sem7Review = () => {
         </td>
       );
     }
-    
+
     return (
-      <td 
-        className={`px-3 py-2 text-sm text-gray-900 min-w-[150px] ${
-          canEdit ? 'cursor-pointer hover:bg-gray-100' : 'cursor-not-allowed opacity-60'
-        }`}
+      <td
+        className={`px-3 py-2 text-sm text-gray-900 min-w-[150px] ${canEdit ? 'cursor-pointer hover:bg-gray-100' : 'cursor-not-allowed opacity-60'
+          }`}
         onClick={() => {
           if (canEdit) {
             handleStartEditRemarks(id, type, currentValue);
@@ -492,9 +492,9 @@ const Sem7Review = () => {
       needs_info: { status: 'warning', text: 'Needs Info' },
       rejected: { status: 'error', text: 'Rejected' }
     };
-    const config = verificationMap[choice.verificationStatus] || { 
-      status: 'warning', 
-      text: choice.verificationStatus || 'Unknown' 
+    const config = verificationMap[choice.verificationStatus] || {
+      status: 'warning',
+      text: choice.verificationStatus || 'Unknown'
     };
     return <StatusBadge status={config.status} text={config.text} />;
   };
@@ -508,8 +508,8 @@ const Sem7Review = () => {
       // Use a single line with tooltip for date to keep rows compact
       const changeDate = formatDateTime(choice.trackChangedByAdminAt);
       return (
-        <span 
-          className="text-sm text-gray-700 whitespace-nowrap" 
+        <span
+          className="text-sm text-gray-700 whitespace-nowrap"
           title={`Changed from ${toTitleCase(choice.previousTrack)} on ${changeDate}`}
         >
           Changed from <span className="font-medium">{toTitleCase(choice.previousTrack)}</span>
@@ -527,12 +527,12 @@ const Sem7Review = () => {
 
     if (application.internship1TrackChangedByAdminAt && application.previousInternship1Track) {
       const changeDate = formatDateTime(application.internship1TrackChangedByAdminAt);
-      const previousTrack = application.previousInternship1Track === 'project' 
-        ? 'Project' 
+      const previousTrack = application.previousInternship1Track === 'project'
+        ? 'Project'
         : 'Application';
       return (
-        <span 
-          className="text-sm text-gray-700 whitespace-nowrap" 
+        <span
+          className="text-sm text-gray-700 whitespace-nowrap"
           title={`Changed from ${previousTrack} on ${changeDate}`}
         >
           Changed from <span className="font-medium">{previousTrack}</span>
@@ -581,8 +581,8 @@ const Sem7Review = () => {
     };
 
     // Build tooltip with remarks if available
-    const tooltip = application.adminRemarks 
-      ? `Remarks: ${application.adminRemarks}` 
+    const tooltip = application.adminRemarks
+      ? `Remarks: ${application.adminRemarks}`
       : undefined;
 
     return (
@@ -676,24 +676,24 @@ const Sem7Review = () => {
   const majorProject1Groups = useMemo(() => {
     // Create a map to store unique groups by group._id
     const groupsMap = new Map();
-    
+
     majorProjectProjects.forEach(project => {
       // Skip if project doesn't have a group
       if (!project.group || !project.group._id) {
         return;
       }
-      
+
       const groupId = project.group._id.toString();
-      
+
       // If group already exists, skip (we only want one row per group)
       if (groupsMap.has(groupId)) {
         return;
       }
-      
+
       const group = project.group;
       const faculty = project.faculty || group.allocatedFaculty || {};
       const members = (group.members || []).filter(m => m.isActive !== false);
-      
+
       // Extract member information (up to 5 members)
       const memberData = [];
       for (let i = 0; i < 5; i++) {
@@ -714,7 +714,7 @@ const Sem7Review = () => {
           });
         }
       }
-      
+
       // Extract faculty preferences (supervisors)
       const facultyPrefs = project.facultyPreferences || [];
       const supervisorData = [];
@@ -726,7 +726,7 @@ const Sem7Review = () => {
           supervisorData.push('-');
         }
       }
-      
+
       // Create group data object
       const groupData = {
         _id: groupId,
@@ -758,23 +758,23 @@ const Sem7Review = () => {
         member5Contact: memberData[4].contact,
         member5Branch: memberData[4].branch
       };
-      
+
       // Add supervisor preferences (up to 10)
       for (let i = 0; i < 10; i++) {
         groupData[`supervisor${i + 1}`] = supervisorData[i] || '-';
       }
-      
+
       groupsMap.set(groupId, groupData);
     });
-    
+
     // Convert map to array and sort by group name
-    const groupsArray = Array.from(groupsMap.values()).sort((a, b) => 
+    const groupsArray = Array.from(groupsMap.values()).sort((a, b) =>
       (a.groupName || '').localeCompare(b.groupName || '')
     );
-    
+
     return groupsArray;
   }, [majorProjectProjects]);
-  
+
   // Calculate max supervisors for dynamic column rendering
   // Use maxMajor1Preferences which is already calculated considering both config limit and actual data
   const maxSupervisors = useMemo(() => {
@@ -787,12 +787,12 @@ const Sem7Review = () => {
     return internship1Projects.filter(project => {
       // Get student ID(s) from the project
       const studentIds = new Set();
-      
+
       if (project.student) {
         const studentId = (project.student?._id || project.student || '').toString();
         if (studentId) studentIds.add(studentId);
       }
-      
+
       // Also check group members if it's a group project
       if (project.group?.members?.length) {
         project.group.members.forEach(member => {
@@ -802,7 +802,7 @@ const Sem7Review = () => {
           }
         });
       }
-      
+
       // Check if any of these students have a summer internship application
       for (const studentId of studentIds) {
         const studentApps = applicationsByStudent.get(studentId) || [];
@@ -811,7 +811,7 @@ const Sem7Review = () => {
           return false; // Exclude this project
         }
       }
-      
+
       return true; // Include this project
     });
   }, [internship1Projects, applicationsByStudent]);
@@ -846,51 +846,46 @@ const Sem7Review = () => {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('all')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'all'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'all'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               All Semester 7 Students ({sem7Students.length})
             </button>
             <button
               onClick={() => setActiveTab('6month')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === '6month'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === '6month'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               6-Month Internship ({applications.filter(app => app.type === '6month').length})
             </button>
             <button
               onClick={() => setActiveTab('summer')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'summer'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'summer'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               Summer Internship ({applications.filter(app => app.type === 'summer').length})
             </button>
             <button
               onClick={() => setActiveTab('major1')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'major1'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'major1'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               Major Project 1 ({majorProject1Groups.length})
             </button>
             <button
               onClick={() => setActiveTab('internship1')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'internship1'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'internship1'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+                }`}
             >
               Internship 1 Projects ({internship1Projects.length})
             </button>
@@ -1214,91 +1209,91 @@ const Sem7Review = () => {
                             // Find the actual project object to get feedback
                             const project = majorProjectProjects.find(p => p._id === group.projectId);
                             return (
-                            <tr key={group._id || index} className="hover:bg-gray-50">
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap sticky left-0 bg-white z-10">
-                                {group.timestamp}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.allocatedFaculty}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.department}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title={group.projectTitle}>
-                                {group.projectTitle}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member1Name}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member1MIS}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member1Contact}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member1Branch}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member2Name}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member2MIS}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member2Contact}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member2Branch}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member3Name}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member3MIS}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member3Contact}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member3Branch}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member4Name}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member4MIS}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member4Contact}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member4Branch}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member5Name}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member5MIS}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member5Contact}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {group.member5Branch}
-                              </td>
-                              <td className="px-3 py-2 text-sm text-gray-900">
-                                {getProjectStatusBadge(group.projectStatus)}
-                              </td>
-                              {/* Dynamic Supervisor Columns */}
-                              {Array.from({ length: maxSupervisors }, (_, i) => (
-                                <td key={`supervisor-${index}-${i + 1}`} className="px-3 py-2 text-sm text-gray-900">
-                                  {group[`supervisor${i + 1}`] || '-'}
+                              <tr key={group._id || index} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap sticky left-0 bg-white z-10">
+                                  {group.timestamp}
                                 </td>
-                              ))}
-                              {renderRemarksCell(group.projectId, 'project', project?.feedback)}
-                            </tr>
-                          );
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.allocatedFaculty}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.department}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title={group.projectTitle}>
+                                  {group.projectTitle}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member1Name}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member1MIS}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member1Contact}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member1Branch}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member2Name}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member2MIS}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member2Contact}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member2Branch}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member3Name}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member3MIS}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member3Contact}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member3Branch}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member4Name}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member4MIS}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member4Contact}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member4Branch}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member5Name}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member5MIS}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member5Contact}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {group.member5Branch}
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900">
+                                  {getProjectStatusBadge(group.projectStatus)}
+                                </td>
+                                {/* Dynamic Supervisor Columns */}
+                                {Array.from({ length: maxSupervisors }, (_, i) => (
+                                  <td key={`supervisor-${index}-${i + 1}`} className="px-3 py-2 text-sm text-gray-900">
+                                    {group[`supervisor${i + 1}`] || '-'}
+                                  </td>
+                                ))}
+                                {renderRemarksCell(group.projectId, 'project', project?.feedback)}
+                              </tr>
+                            );
                           })
                         )}
                       </tbody>
@@ -1344,10 +1339,10 @@ const Sem7Review = () => {
                         ) : (
                           filteredInternship1Projects.map((project) => {
                             const timestamp = project.createdAt ? formatDateTime(project.createdAt) : '-';
-                            
+
                             // Get faculty preferences from project
                             const facultyPrefs = project.facultyPreferences || [];
-                            
+
                             // Sort preferences by priority (priority is 1-indexed)
                             const sortedPrefs = [...facultyPrefs].sort((a, b) => {
                               const priorityA = a.priority || (facultyPrefs.indexOf(a) + 1);
@@ -1393,7 +1388,7 @@ const Sem7Review = () => {
                                   return (
                                     <td key={num} className="px-3 py-2 text-sm text-gray-900">
                                       {formatFacultyName(pref?.faculty, '-')}
-                                </td>
+                                    </td>
                                   );
                                 })}
                                 {renderRemarksCell(project._id, 'project', project.feedback)}
@@ -1458,98 +1453,98 @@ const Sem7Review = () => {
                               }
                             };
 
-                            const internship1Details = app.previousInternship1Track 
-                              ? app.previousInternship1Track === 'project' 
-                                ? 'Project under Faculty' 
+                            const internship1Details = app.previousInternship1Track
+                              ? app.previousInternship1Track === 'project'
+                                ? 'Project under Faculty'
                                 : 'Application (Company)'
                               : (app.type === 'summer' ? 'Completed the Summer Internship' : '6-Month Internship');
 
                             return (
-                            <tr key={app._id} className="hover:bg-gray-50">
+                              <tr key={app._id} className="hover:bg-gray-50">
                                 <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap sticky left-0 bg-white z-10">
                                   {app.createdAt ? formatDateTime(app.createdAt) : '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                                   {app.student?.collegeEmail || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.student?.fullName || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.student?.misNumber || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.student?.contactNumber || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.student?.branch || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {internship1Details}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.details?.companyName || '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                                   {formatDate(app.details?.startDate)}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                                   {formatDate(app.details?.endDate)}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {app.type === '6month' && app.details?.offerLetterLink ? (
-                                  <a
-                                    href={app.details.offerLetterLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  {app.type === '6month' && app.details?.offerLetterLink ? (
+                                    <a
+                                      href={app.details.offerLetterLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="text-blue-600 hover:text-blue-800 underline"
-                                  >
+                                    >
                                       View Offer Letter
-                                  </a>
-                                ) : app.type === 'summer' && (app.details?.completionCertificateLink || app.uploads?.completionCertificateFile) ? (
-                                  <a
-                                    href={app.details?.completionCertificateLink || internshipAPI.downloadFile(app._id, 'completionCertificate')}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    </a>
+                                  ) : app.type === 'summer' && (app.details?.completionCertificateLink || app.uploads?.completionCertificateFile) ? (
+                                    <a
+                                      href={app.details?.completionCertificateLink || internshipAPI.downloadFile(app._id, 'completionCertificate')}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="text-blue-600 hover:text-blue-800 underline"
-                                  >
+                                    >
                                       View Certificate
-                                  </a>
-                                ) : (
+                                    </a>
+                                  ) : (
                                     '-'
-                                )}
-                              </td>
+                                  )}
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {app.details?.mentorName || '-'}
-                              </td>
+                                  {app.details?.mentorName || '-'}
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {app.details?.mentorPhone || '-'}
-                              </td>
+                                  {app.details?.mentorPhone || '-'}
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {app.details?.mentorEmail || '-'}
-                              </td>
+                                  {app.details?.mentorEmail || '-'}
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {app.details?.roleOrNatureOfWork || '-'}
-                              </td>
+                                  {app.details?.roleOrNatureOfWork || '-'}
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.details?.hasStipend === 'yes' ? 'Yes' : app.details?.hasStipend === 'no' ? 'No' : '-'}
-                              </td>
+                                </td>
                                 <td className="px-3 py-2 text-sm text-gray-900">
                                   {app.details?.stipendRs || app.details?.stipendRs === 0 ? `₹${app.details.stipendRs}` : '-'}
-                              </td>
+                                </td>
                                 {renderRemarksCell(app._id, 'internship', app.adminRemarks)}
                                 <td className="px-3 py-2 text-sm text-gray-900">
-                                {getStatusBadge(app.status)}
-                              </td>
+                                  {getStatusBadge(app.status)}
+                                </td>
                                 <td className="px-3 py-2 text-sm font-medium sticky right-0 bg-white z-10">
-                                <button
-                                  onClick={() => handleReview(app)}
+                                  <button
+                                    onClick={() => handleReview(app)}
                                     className="text-blue-600 hover:text-blue-900"
-                                >
-                                  Review
-                                </button>
-                              </td>
-                            </tr>
+                                  >
+                                    Review
+                                  </button>
+                                </td>
+                              </tr>
                             );
                           })
                         )}
@@ -1563,6 +1558,9 @@ const Sem7Review = () => {
         </div>
 
         {/* Review Modal */}
+        {/* Faculty Allocation Runner — modular, self-contained */}
+        <AllocationRunner semester={7} onAllocationComplete={loadAllData} />
+
         {showModal && selectedItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
@@ -1586,185 +1584,185 @@ const Sem7Review = () => {
 
               <div className="px-6 py-4">
                 <>
-                    {/* Student Information */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Student Information</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Full Name</p>
-                          <p className="text-sm font-medium text-gray-900">{selectedItem.student?.fullName || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">MIS Number</p>
-                          <p className="text-sm font-medium text-gray-900">{selectedItem.student?.misNumber || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Email Address</p>
-                          <p className="text-sm text-gray-900">{selectedItem.student?.collegeEmail || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Contact Number</p>
-                          <p className="text-sm text-gray-900">{selectedItem.student?.contactNumber || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Branch</p>
-                          <p className="text-sm text-gray-900">{selectedItem.student?.branch || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Application Type</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {selectedItem.type === '6month' ? '6-Month Internship' : 'Summer Internship'}
-                          </p>
-                        </div>
+                  {/* Student Information */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Student Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Full Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedItem.student?.fullName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">MIS Number</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedItem.student?.misNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Email Address</p>
+                        <p className="text-sm text-gray-900">{selectedItem.student?.collegeEmail || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Contact Number</p>
+                        <p className="text-sm text-gray-900">{selectedItem.student?.contactNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Branch</p>
+                        <p className="text-sm text-gray-900">{selectedItem.student?.branch || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Application Type</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedItem.type === '6month' ? '6-Month Internship' : 'Summer Internship'}
+                        </p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Company Details */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Company Details</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Company Details */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Company Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Company Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedItem.details?.companyName || 'N/A'}</p>
+                      </div>
+                      {selectedItem.details?.location && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Company Name</p>
-                          <p className="text-sm font-medium text-gray-900">{selectedItem.details?.companyName || 'N/A'}</p>
+                          <p className="text-xs text-gray-500 mb-1">Location</p>
+                          <p className="text-sm text-gray-900">{selectedItem.details.location}</p>
                         </div>
-                        {selectedItem.details?.location && (
+                      )}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Start Date</p>
+                        <p className="text-sm text-gray-900">
+                          {selectedItem.details?.startDate ? new Date(selectedItem.details.startDate).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">End Date</p>
+                        <p className="text-sm text-gray-900">
+                          {selectedItem.details?.endDate ? new Date(selectedItem.details.endDate).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      {selectedItem.details?.mode && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Mode</p>
+                          <p className="text-sm text-gray-900 capitalize">{selectedItem.details.mode}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Manager/Contact Details */}
+                  {(selectedItem.details?.mentorName || selectedItem.details?.mentorEmail || selectedItem.details?.mentorPhone) && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Manager/Contact Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedItem.details?.mentorName && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Location</p>
-                            <p className="text-sm text-gray-900">{selectedItem.details.location}</p>
+                            <p className="text-xs text-gray-500 mb-1">Manager Name</p>
+                            <p className="text-sm text-gray-900">{selectedItem.details.mentorName}</p>
                           </div>
                         )}
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Start Date</p>
-                          <p className="text-sm text-gray-900">
-                            {selectedItem.details?.startDate ? new Date(selectedItem.details.startDate).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">End Date</p>
-                          <p className="text-sm text-gray-900">
-                            {selectedItem.details?.endDate ? new Date(selectedItem.details.endDate).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                        {selectedItem.details?.mode && (
+                        {selectedItem.details?.mentorPhone && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Mode</p>
-                            <p className="text-sm text-gray-900 capitalize">{selectedItem.details.mode}</p>
+                            <p className="text-xs text-gray-500 mb-1">Contact Number</p>
+                            <p className="text-sm text-gray-900">{selectedItem.details.mentorPhone}</p>
+                          </div>
+                        )}
+                        {selectedItem.details?.mentorEmail && (
+                          <div className="md:col-span-2">
+                            <p className="text-xs text-gray-500 mb-1">Official Email Address</p>
+                            <p className="text-sm text-gray-900">{selectedItem.details.mentorEmail}</p>
                           </div>
                         )}
                       </div>
                     </div>
+                  )}
 
-                    {/* Manager/Contact Details */}
-                    {(selectedItem.details?.mentorName || selectedItem.details?.mentorEmail || selectedItem.details?.mentorPhone) && (
-                      <div className="mb-6">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Manager/Contact Details</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {selectedItem.details?.mentorName && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Manager Name</p>
-                              <p className="text-sm text-gray-900">{selectedItem.details.mentorName}</p>
-                            </div>
-                          )}
-                          {selectedItem.details?.mentorPhone && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Contact Number</p>
-                              <p className="text-sm text-gray-900">{selectedItem.details.mentorPhone}</p>
-                            </div>
-                          )}
-                          {selectedItem.details?.mentorEmail && (
-                            <div className="md:col-span-2">
-                              <p className="text-xs text-gray-500 mb-1">Official Email Address</p>
-                              <p className="text-sm text-gray-900">{selectedItem.details.mentorEmail}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Nature of Work */}
-                    {selectedItem.details?.roleOrNatureOfWork && (
-                      <div className="mb-6">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Nature of Work</h4>
-                        <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">{selectedItem.details.roleOrNatureOfWork}</p>
-                      </div>
-                    )}
-
-                    {/* Stipend Information */}
+                  {/* Nature of Work */}
+                  {selectedItem.details?.roleOrNatureOfWork && (
                     <div className="mb-6">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Stipend/Salary Information</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Are you getting Stipend/Salary?</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {selectedItem.details?.hasStipend === 'yes' ? 'Yes' : selectedItem.details?.hasStipend === 'no' ? 'No' : (selectedItem.details?.stipendRs > 0 ? 'Yes' : 'No')}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Monthly Amount (Rs.)</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {selectedItem.details?.hasStipend === 'yes' || selectedItem.details?.stipendRs > 0 
-                              ? selectedItem.details.stipendRs.toLocaleString('en-IN') 
-                              : '0'}
-                          </p>
-                        </div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Nature of Work</h4>
+                      <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">{selectedItem.details.roleOrNatureOfWork}</p>
+                    </div>
+                  )}
+
+                  {/* Stipend Information */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Stipend/Salary Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Are you getting Stipend/Salary?</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedItem.details?.hasStipend === 'yes' ? 'Yes' : selectedItem.details?.hasStipend === 'no' ? 'No' : (selectedItem.details?.stipendRs > 0 ? 'Yes' : 'No')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Monthly Amount (Rs.)</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedItem.details?.hasStipend === 'yes' || selectedItem.details?.stipendRs > 0
+                            ? selectedItem.details.stipendRs.toLocaleString('en-IN')
+                            : '0'}
+                        </p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Documents */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Documents</h4>
-                      <div className="space-y-2">
-                        {selectedItem.type === '6month' && selectedItem.details?.offerLetterLink && (
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">Offer Letter Link</p>
-                            <a 
-                              href={selectedItem.details.offerLetterLink} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all inline-block"
-                            >
-                              {selectedItem.details.offerLetterLink}
-                            </a>
-                          </div>
-                        )}
-                        {selectedItem.type === 'summer' && (selectedItem.details?.completionCertificateLink || selectedItem.uploads?.completionCertificateFile) && (
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">Completion Certificate {selectedItem.details?.completionCertificateLink ? 'Link (Google Drive)' : '(File Upload - Legacy)'}</p>
-                            <a 
-                              href={selectedItem.details?.completionCertificateLink || internshipAPI.downloadFile(selectedItem._id, 'completionCertificate')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all inline-block"
-                            >
-                              {selectedItem.details?.completionCertificateLink || 'View Completion Certificate'}
-                            </a>
-                          </div>
-                        )}
-                        {((selectedItem.type === '6month' && !selectedItem.details?.offerLetterLink) ||
-                          (selectedItem.type === 'summer' && !selectedItem.details?.completionCertificateLink && !selectedItem.uploads?.completionCertificateFile)) && (
+                  {/* Documents */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 border-b pb-2">Documents</h4>
+                    <div className="space-y-2">
+                      {selectedItem.type === '6month' && selectedItem.details?.offerLetterLink && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Offer Letter Link</p>
+                          <a
+                            href={selectedItem.details.offerLetterLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all inline-block"
+                          >
+                            {selectedItem.details.offerLetterLink}
+                          </a>
+                        </div>
+                      )}
+                      {selectedItem.type === 'summer' && (selectedItem.details?.completionCertificateLink || selectedItem.uploads?.completionCertificateFile) && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Completion Certificate {selectedItem.details?.completionCertificateLink ? 'Link (Google Drive)' : '(File Upload - Legacy)'}</p>
+                          <a
+                            href={selectedItem.details?.completionCertificateLink || internshipAPI.downloadFile(selectedItem._id, 'completionCertificate')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all inline-block"
+                          >
+                            {selectedItem.details?.completionCertificateLink || 'View Completion Certificate'}
+                          </a>
+                        </div>
+                      )}
+                      {((selectedItem.type === '6month' && !selectedItem.details?.offerLetterLink) ||
+                        (selectedItem.type === 'summer' && !selectedItem.details?.completionCertificateLink && !selectedItem.uploads?.completionCertificateFile)) && (
                           <p className="text-sm text-gray-500 italic">No documents uploaded</p>
                         )}
-                      </div>
                     </div>
+                  </div>
 
-                    {/* Application Status Review */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Application Status <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={reviewData.status}
-                        onChange={(e) => setReviewData({ ...reviewData, status: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-                      >
-                        <option value="submitted">Submitted</option>
-                        <option value="needs_info">Needs More Information</option>
-                        <option value="pending_verification">Pending Verification</option>
-                        <option value="verified_pass">Verified (Pass)</option>
-                        <option value="verified_fail">Verified (Fail)</option>
-                        <option value="absent">Absent</option>
-                      </select>
-                    </div>
+                  {/* Application Status Review */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Application Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={reviewData.status}
+                      onChange={(e) => setReviewData({ ...reviewData, status: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="submitted">Submitted</option>
+                      <option value="needs_info">Needs More Information</option>
+                      <option value="pending_verification">Pending Verification</option>
+                      <option value="verified_pass">Verified (Pass)</option>
+                      <option value="verified_fail">Verified (Fail)</option>
+                      <option value="absent">Absent</option>
+                    </select>
+                  </div>
                 </>
 
                 <div className="mb-4">

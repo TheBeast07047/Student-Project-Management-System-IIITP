@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import Layout from '../../components/common/Layout';
 import StatusBadge from '../../components/common/StatusBadge';
 import { formatFacultyName } from '../../utils/formatUtils';
+import AllocationRunner from '../../components/admin/AllocationRunner';
 
 const INTERNSHIP_STATUS_MAP = {
   submitted: { status: 'info', text: 'Submitted' },
@@ -16,7 +17,7 @@ const INTERNSHIP_STATUS_MAP = {
 
 const Sem8Review = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'type1', 'type2', 'major2-group', 'major2-solo', 'internship2-faculty', 'internship2-company', '6month'
-  
+
   // State
   const [sem8Students, setSem8Students] = useState([]);
   const [trackChoices, setTrackChoices] = useState([]);
@@ -27,7 +28,7 @@ const Sem8Review = () => {
   const [facultyPreferences, setFacultyPreferences] = useState([]); // FacultyPreference documents for group projects
   const [facultyPreferenceLimit, setFacultyPreferenceLimit] = useState(5); // Default from config (will be overridden by calculated max)
   const [maxFacultyPreferences, setMaxFacultyPreferences] = useState(5); // Dynamic max calculated from actual project data
-  
+
   // Common State
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -37,7 +38,7 @@ const Sem8Review = () => {
     status: 'submitted',
     remarks: ''
   });
-  
+
   // State for inline remarks editing
   const [editingRemarks, setEditingRemarks] = useState({ id: null, type: null, value: '' });
   const [savingRemarks, setSavingRemarks] = useState(false);
@@ -74,7 +75,7 @@ const Sem8Review = () => {
         adminAPI.listInternshipApplications({ semester: 8 }),
         adminAPI.getSystemConfigByKey('sem8.majorProject2.facultyPreferenceLimit').catch(() => ({ success: false, data: null })) // Optional, don't fail if not available
       ]);
-      
+
       if (studentsResponse.success) {
         setSem8Students(studentsResponse.data || []);
       }
@@ -85,10 +86,10 @@ const Sem8Review = () => {
 
       const major2Data = majorProjectsResponse.success ? (majorProjectsResponse.data || []) : [];
       const internship2Data = internship2Response.success ? (internship2Response.data || []) : [];
-      
+
       setMajorProject2Projects(major2Data);
       setInternship2Projects(internship2Data);
-      
+
       // Calculate maximum number of faculty preferences actually present in all projects
       let maxPrefs = 0;
       [...major2Data, ...internship2Data].forEach(project => {
@@ -97,15 +98,15 @@ const Sem8Review = () => {
           maxPrefs = prefs.length;
         }
       });
-      
+
       // Use the maximum found in data, or config limit (whichever is higher)
       // This ensures we show all preferences even if some projects have more than the current config limit
-      const configLimit = (systemConfigResponse.success && systemConfigResponse.data?.value) 
-        ? parseInt(systemConfigResponse.data.value, 10) || 5 
+      const configLimit = (systemConfigResponse.success && systemConfigResponse.data?.value)
+        ? parseInt(systemConfigResponse.data.value, 10) || 5
         : 5;
       setFacultyPreferenceLimit(configLimit);
       setMaxFacultyPreferences(Math.max(maxPrefs || 0, configLimit, 5)); // At least 5, or max found in data
-      
+
       if (majorProjectsResponse.success === false) {
         console.warn('Failed to load Major Project 2:', majorProjectsResponse.message);
       }
@@ -136,12 +137,12 @@ const Sem8Review = () => {
   const handleSubmitReview = async () => {
     try {
       setIsSubmitting(true);
-      
+
       const response = await adminAPI.reviewInternshipApplication(selectedItem._id, {
         status: reviewData.status,
         adminRemarks: reviewData.remarks
       });
-      
+
       if (response.success) {
         toast.success('Internship application reviewed successfully');
         setShowModal(false);
@@ -190,9 +191,9 @@ const Sem8Review = () => {
     try {
       setSavingRemarks(true);
       // Pass current status to avoid validation error, but only update remarks
-      const response = await adminAPI.reviewInternshipApplication(applicationId, { 
+      const response = await adminAPI.reviewInternshipApplication(applicationId, {
         status: currentStatus || 'submitted', // Pass current status to avoid validation error
-        adminRemarks: remarks 
+        adminRemarks: remarks
       });
       if (response.success) {
         toast.success('Remarks saved successfully');
@@ -213,7 +214,7 @@ const Sem8Review = () => {
   const renderRemarksCell = (id, type, currentValue) => {
     const isEditing = editingRemarks.id === id && editingRemarks.type === type;
     const canEdit = !!id; // Only allow editing if ID exists
-    
+
     if (isEditing) {
       return (
         <td className="px-3 py-2 text-sm">
@@ -272,12 +273,11 @@ const Sem8Review = () => {
         </td>
       );
     }
-    
+
     return (
-      <td 
-        className={`px-3 py-2 text-sm text-gray-900 min-w-[150px] ${
-          canEdit ? 'cursor-pointer hover:bg-gray-100' : 'cursor-not-allowed opacity-60'
-        }`}
+      <td
+        className={`px-3 py-2 text-sm text-gray-900 min-w-[150px] ${canEdit ? 'cursor-pointer hover:bg-gray-100' : 'cursor-not-allowed opacity-60'
+          }`}
         onClick={() => {
           if (canEdit) {
             handleStartEditRemarks(id, type, currentValue);
@@ -329,18 +329,18 @@ const Sem8Review = () => {
     if (!sem7Selection) {
       return null; // Cannot determine type without Sem 7 selection
     }
-    
+
     // Type 1: Completed 6-month internship in Sem 7
-    if (sem7Selection.finalizedTrack === 'internship' && 
-        sem7Selection.internshipOutcome === 'verified_pass') {
+    if (sem7Selection.finalizedTrack === 'internship' &&
+      sem7Selection.internshipOutcome === 'verified_pass') {
       return 'type1';
     }
-    
+
     // Type 2: Did coursework in Sem 7
     if (sem7Selection.finalizedTrack === 'coursework') {
       return 'type2';
     }
-    
+
     return null; // Unknown type
   };
 
@@ -444,9 +444,9 @@ const Sem8Review = () => {
       needs_info: { status: 'warning', text: 'Needs Info' },
       rejected: { status: 'error', text: 'Rejected' }
     };
-    const config = verificationMap[choice.verificationStatus] || { 
-      status: 'warning', 
-      text: choice.verificationStatus || 'Unknown' 
+    const config = verificationMap[choice.verificationStatus] || {
+      status: 'warning',
+      text: choice.verificationStatus || 'Unknown'
     };
     return <StatusBadge status={config.status} text={config.text} />;
   };
@@ -474,8 +474,8 @@ const Sem8Review = () => {
       text: toTitleCase(application.status || 'Unknown')
     };
 
-    const tooltip = application.adminRemarks 
-      ? `Remarks: ${application.adminRemarks}` 
+    const tooltip = application.adminRemarks
+      ? `Remarks: ${application.adminRemarks}`
       : undefined;
 
     return (
@@ -600,18 +600,18 @@ const Sem8Review = () => {
   // Filter students based on active tab
   const filteredStudents = useMemo(() => {
     let students = [...sem8Students];
-    
+
     if (activeTab === 'type1') {
       students = students.filter(s => getStudentType(s) === 'type1');
     } else if (activeTab === 'type2') {
       students = students.filter(s => getStudentType(s) === 'type2');
     }
-    
+
     // Filter out students with unknown types for type1/type2 tabs
     if (activeTab === 'type1' || activeTab === 'type2') {
       students = students.filter(s => getStudentType(s) !== null);
     }
-    
+
     // Sort by email
     students.sort((a, b) => {
       const emailA = (a.collegeEmail || '').toLowerCase();
@@ -623,7 +623,7 @@ const Sem8Review = () => {
       const misB = b.misNumber || '';
       return misA.localeCompare(misB);
     });
-    
+
     return students;
   }, [sem8Students, activeTab]);
 
@@ -726,31 +726,28 @@ const Sem8Review = () => {
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveTab('all')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'all'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'all'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     All Students ({sem8Students.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('type1')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'type1'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'type1'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Type 1 ({sem8Students.filter(s => getStudentType(s) === 'type1').length})
                   </button>
                   <button
                     onClick={() => setActiveTab('type2')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'type2'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'type2'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Type 2 ({sem8Students.filter(s => getStudentType(s) === 'type2').length})
                   </button>
@@ -763,31 +760,28 @@ const Sem8Review = () => {
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveTab('major2-group')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'major2-group'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'major2-group'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Major Project 2 (Group) ({majorProject2Projects.filter(p => p.group).length})
                   </button>
                   <button
                     onClick={() => setActiveTab('major2-solo')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'major2-solo'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'major2-solo'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Major Project 2 (Solo) ({majorProject2Projects.filter(p => !p.group).length})
                   </button>
                   <button
                     onClick={() => setActiveTab('internship2-faculty')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'internship2-faculty'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'internship2-faculty'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Internship 2 (Project under Faculty) ({internship2Projects.length})
                   </button>
@@ -800,21 +794,19 @@ const Sem8Review = () => {
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveTab('internship2-company')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === 'internship2-company'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'internship2-company'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     Internship 2 (Under Company) ({summerApplications.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('6month')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === '6month'
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === '6month'
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     6-Month Internship ({sixMonthApplications.length})
                   </button>
@@ -851,11 +843,11 @@ const Sem8Review = () => {
                           </>
                         )}
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {activeTab === 'type1' 
-                            ? 'Major Project 2 (Group)' 
-                            : activeTab === 'type2' 
-                            ? 'Major Project 2 (Solo)' 
-                            : 'Major Project 2 (Solo/Group)'}
+                          {activeTab === 'type1'
+                            ? 'Major Project 2 (Group)'
+                            : activeTab === 'type2'
+                              ? 'Major Project 2 (Solo)'
+                              : 'Major Project 2 (Solo/Group)'}
                         </th>
                         {activeTab !== 'type1' && (
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">6-Month App (Type 2)</th>
@@ -866,9 +858,9 @@ const Sem8Review = () => {
                       {filteredStudents.length === 0 ? (
                         <tr>
                           <td colSpan={
-                            activeTab === 'type1' ? 6 : 
-                            activeTab === 'type2' ? 5 : 
-                            8
+                            activeTab === 'type1' ? 6 :
+                              activeTab === 'type2' ? 5 :
+                                8
                           } className="px-4 py-8 text-center text-gray-500">
                             No students found
                           </td>
@@ -895,11 +887,10 @@ const Sem8Review = () => {
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
                                 {studentType ? (
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    studentType === 'type1' 
-                                      ? 'bg-blue-100 text-blue-800' 
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${studentType === 'type1'
+                                      ? 'bg-blue-100 text-blue-800'
                                       : 'bg-purple-100 text-purple-800'
-                                  }`}>
+                                    }`}>
                                     {getStudentTypeLabel(studentType)}
                                   </span>
                                 ) : (
@@ -962,12 +953,12 @@ const Sem8Review = () => {
                                   if (studentType === 'type2' && sixMonthApp) {
                                     return <span className="text-sm text-gray-500">Not applicable</span>;
                                   }
-                                  
+
                                   // Determine if Major Project 2 is applicable
                                   // For Type 1: Always applicable (they do coursework/Major Project 2)
                                   // For Type 2: Always applicable as a potential choice (unless they chose 6-month internship)
                                   const isApplicable = studentType === 'type1' || studentType === 'type2';
-                                  
+
                                   const emptyLabel = isApplicable ? 'Not registered' : 'Not applicable';
                                   return renderProjectCell(
                                     majorProject2,
@@ -1052,11 +1043,11 @@ const Sem8Review = () => {
                         filteredMajorProject2Group.map((project) => {
                           const members = project.group?.members || [];
                           const timestamp = project.createdAt ? formatDateTime(project.createdAt) : '-';
-                          
+
                           // Get faculty preferences from project
                           // For group projects, preferences are stored in project.facultyPreferences
                           const facultyPrefs = project.facultyPreferences || [];
-                          
+
                           // Sort preferences by priority (priority is 1-indexed)
                           const sortedPrefs = [...facultyPrefs].sort((a, b) => {
                             const priorityA = a.priority || (facultyPrefs.indexOf(a) + 1);
@@ -1081,7 +1072,7 @@ const Sem8Review = () => {
                               {/* Render up to 5 members */}
                               {[0, 1, 2, 3, 4].map((idx) => {
                                 const member = members[idx];
-                                
+
                                 return (
                                   <React.Fragment key={idx}>
                                     <td className="px-3 py-2 text-sm text-gray-900">
@@ -1160,10 +1151,10 @@ const Sem8Review = () => {
                       ) : (
                         filteredMajorProject2Solo.map((project) => {
                           const timestamp = project.createdAt ? formatDateTime(project.createdAt) : '-';
-                          
+
                           // Get faculty preferences from project
                           const facultyPrefs = project.facultyPreferences || [];
-                          
+
                           // Sort preferences by priority (priority is 1-indexed)
                           const sortedPrefs = [...facultyPrefs].sort((a, b) => {
                             const priorityA = a.priority || (facultyPrefs.indexOf(a) + 1);
@@ -1258,10 +1249,10 @@ const Sem8Review = () => {
                       ) : (
                         filteredInternship2Faculty.map((project) => {
                           const timestamp = project.createdAt ? formatDateTime(project.createdAt) : '-';
-                          
+
                           // Get faculty preferences from project
                           const facultyPrefs = project.facultyPreferences || [];
-                          
+
                           // Sort preferences by priority (priority is 1-indexed)
                           const sortedPrefs = [...facultyPrefs].sort((a, b) => {
                             const priorityA = a.priority || (facultyPrefs.indexOf(a) + 1);
@@ -1372,9 +1363,9 @@ const Sem8Review = () => {
                             }
                           };
 
-                          const internship1Details = app.previousInternship1Track 
-                            ? app.previousInternship1Track === 'project' 
-                              ? 'Project under Faculty' 
+                          const internship1Details = app.previousInternship1Track
+                            ? app.previousInternship1Track === 'project'
+                              ? 'Project under Faculty'
                               : 'Application (Company)'
                             : '-';
 
@@ -1412,9 +1403,9 @@ const Sem8Review = () => {
                               </td>
                               <td className="px-3 py-2 text-sm text-gray-900">
                                 {app.details?.completionCertificateLink ? (
-                                  <a 
-                                    href={app.details.completionCertificateLink} 
-                                    target="_blank" 
+                                  <a
+                                    href={app.details.completionCertificateLink}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 underline"
                                   >
@@ -1513,9 +1504,9 @@ const Sem8Review = () => {
                             }
                           };
 
-                          const internship1Details = app.previousInternship1Track 
-                            ? app.previousInternship1Track === 'project' 
-                              ? 'Project under Faculty' 
+                          const internship1Details = app.previousInternship1Track
+                            ? app.previousInternship1Track === 'project'
+                              ? 'Project under Faculty'
                               : 'Application (Company)'
                             : '6-Month Internship';
 
@@ -1553,9 +1544,9 @@ const Sem8Review = () => {
                               </td>
                               <td className="px-3 py-2 text-sm text-gray-900">
                                 {app.details?.offerLetterLink ? (
-                                  <a 
-                                    href={app.details.offerLetterLink} 
-                                    target="_blank" 
+                                  <a
+                                    href={app.details.offerLetterLink}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 underline"
                                   >
@@ -1606,6 +1597,9 @@ const Sem8Review = () => {
         )}
 
         {/* Review Modal */}
+        {/* Faculty Allocation Runner — modular, self-contained */}
+        <AllocationRunner semester={8} onAllocationComplete={loadAllData} />
+
         {showModal && selectedItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
@@ -1745,8 +1739,8 @@ const Sem8Review = () => {
                       <div>
                         <p className="text-xs text-gray-500 mb-1">Monthly Amount (Rs.)</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {selectedItem.details?.hasStipend === 'yes' || selectedItem.details?.stipendRs > 0 
-                            ? (selectedItem.details.stipendRs?.toLocaleString('en-IN') || '0') 
+                          {selectedItem.details?.hasStipend === 'yes' || selectedItem.details?.stipendRs > 0
+                            ? (selectedItem.details.stipendRs?.toLocaleString('en-IN') || '0')
                             : '0'}
                         </p>
                       </div>
@@ -1760,10 +1754,10 @@ const Sem8Review = () => {
                       {selectedItem.type === '6month' && selectedItem.details?.offerLetterLink && (
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Offer Letter Link</p>
-                          <a 
-                            href={selectedItem.details.offerLetterLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={selectedItem.details.offerLetterLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all inline-block"
                           >
                             {selectedItem.details.offerLetterLink}
@@ -1773,7 +1767,7 @@ const Sem8Review = () => {
                       {selectedItem.type === 'summer' && (selectedItem.details?.completionCertificateLink || selectedItem.uploads?.completionCertificateFile) && (
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Completion Certificate {selectedItem.details?.completionCertificateLink ? 'Link (Google Drive)' : '(File Upload - Legacy)'}</p>
-                          <a 
+                          <a
                             href={selectedItem.details?.completionCertificateLink || internshipAPI.downloadFile(selectedItem._id, 'completionCertificate')}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1785,8 +1779,8 @@ const Sem8Review = () => {
                       )}
                       {((selectedItem.type === '6month' && !selectedItem.details?.offerLetterLink) ||
                         (selectedItem.type === 'summer' && !selectedItem.details?.completionCertificateLink && !selectedItem.uploads?.completionCertificateFile)) && (
-                        <p className="text-sm text-gray-500 italic">No documents uploaded</p>
-                      )}
+                          <p className="text-sm text-gray-500 italic">No documents uploaded</p>
+                        )}
                     </div>
                   </div>
 
