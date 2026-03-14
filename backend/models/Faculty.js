@@ -8,7 +8,7 @@ const facultySchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  
+
   // Personal Information
   prefix: {
     type: String,
@@ -34,7 +34,7 @@ const facultySchema = new mongoose.Schema({
     trim: true,
     match: [/^[6-9]\d{9}$/, 'Please enter a valid 10-digit phone number']
   },
-  
+
   // Faculty Information
   facultyId: {
     type: String,
@@ -60,14 +60,19 @@ const facultySchema = new mongoose.Schema({
     enum: ['HOD', 'Assistant Professor', 'Adjunct Assistant Professor', 'Assistant Registrar', 'TPO', 'Warden', 'Chief Warden', 'Associate Dean', 'Coordinator(PG, PhD)', 'Tenders/Purchase'],
     default: 'Assistant Professor'
   },
-  
+
   // Faculty Status
+  maxGroupsAllowed: {
+    type: Number,
+    default: 5,
+    min: 1
+  },
   isRetired: {
     type: Boolean,
     default: false
   },
   retirementDate: Date,
-  
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -86,13 +91,13 @@ facultySchema.index({ department: 1 });
 // facultyId index is already created by unique: true
 
 // Pre-save middleware to update timestamps
-facultySchema.pre('save', function(next) {
+facultySchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 // Generate facultyId if missing, and validate format
-facultySchema.pre('validate', async function(next) {
+facultySchema.pre('validate', async function (next) {
   try {
     if (!this.facultyId) {
       // Try a few times to generate a unique FAC + 3 digits id

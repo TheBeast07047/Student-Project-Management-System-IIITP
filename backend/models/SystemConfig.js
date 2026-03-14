@@ -8,45 +8,45 @@ const systemConfigSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  
+
   // Config Value (flexible data type)
   configValue: {
     type: mongoose.Schema.Types.Mixed,
     required: true
   },
-  
+
   // Config Type (for validation)
   configType: {
     type: String,
-    enum: ['string', 'number', 'boolean', 'object', 'array'],
+    enum: ['string', 'number', 'boolean', 'object', 'array', 'date'],
     required: true
   },
-  
+
   // Description
   description: {
     type: String,
     trim: true
   },
-  
+
   // Category (for grouping configs)
   category: {
     type: String,
     enum: ['general', 'academic', 'sem4', 'sem5', 'sem6', 'sem7', 'sem8', 'faculty', 'student', 'evaluation'],
     default: 'general'
   },
-  
+
   // Is Active
   isActive: {
     type: Boolean,
     default: true
   },
-  
+
   // Last Updated By
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  
+
   // Timestamps
   createdAt: {
     type: Date,
@@ -65,13 +65,13 @@ const systemConfigSchema = new mongoose.Schema({
 systemConfigSchema.index({ category: 1 });
 
 // Pre-save middleware
-systemConfigSchema.pre('save', function(next) {
+systemConfigSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 // Static method to get config value
-systemConfigSchema.statics.getConfigValue = async function(key, defaultValue = null) {
+systemConfigSchema.statics.getConfigValue = async function (key, defaultValue = null) {
   try {
     const config = await this.findOne({ configKey: key, isActive: true });
     return config ? config.configValue : defaultValue;
@@ -82,7 +82,7 @@ systemConfigSchema.statics.getConfigValue = async function(key, defaultValue = n
 };
 
 // Static method to set config value
-systemConfigSchema.statics.setConfigValue = async function(key, value, type, description, category = 'general', userId = null) {
+systemConfigSchema.statics.setConfigValue = async function (key, value, type, description, category = 'general', userId = null) {
   try {
     const config = await this.findOneAndUpdate(
       { configKey: key },
@@ -105,7 +105,7 @@ systemConfigSchema.statics.setConfigValue = async function(key, value, type, des
 };
 
 // Static method to get all configs by category
-systemConfigSchema.statics.getConfigsByCategory = async function(category) {
+systemConfigSchema.statics.getConfigsByCategory = async function (category) {
   try {
     return await this.find({ category: category, isActive: true }).sort({ configKey: 1 });
   } catch (error) {
@@ -115,7 +115,7 @@ systemConfigSchema.statics.getConfigsByCategory = async function(category) {
 };
 
 // Static method to initialize default configs
-systemConfigSchema.statics.initializeDefaults = async function() {
+systemConfigSchema.statics.initializeDefaults = async function () {
   const defaults = [
     {
       configKey: 'sem5.facultyPreferenceLimit',
@@ -143,6 +143,13 @@ systemConfigSchema.statics.initializeDefaults = async function() {
       configValue: ['Regular', 'Adjunct', 'On Lien'],
       configType: 'array',
       description: 'Faculty types allowed in dropdown for Sem 5 Minor Project 2 preferences (Regular, Adjunct, On Lien)',
+      category: 'sem5'
+    },
+    {
+      configKey: 'sem5.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to Sem 5 Minor Project 2 group allocation requests',
       category: 'sem5'
     },
     {
@@ -261,6 +268,20 @@ systemConfigSchema.statics.initializeDefaults = async function() {
       description: 'Faculty types allowed in dropdown for Sem 7 Internship 1 preferences (Regular, Adjunct, On Lien)',
       category: 'sem7'
     },
+    {
+      configKey: 'sem7.major1.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to Sem 7 Major Project 1 group allocation requests',
+      category: 'sem7'
+    },
+    {
+      configKey: 'sem7.internship1.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to Sem 7 Internship 1 solo allocation requests',
+      category: 'sem7'
+    },
     // Sem 8 windows (B.Tech)
     {
       configKey: 'sem8.choiceWindow',
@@ -369,6 +390,35 @@ systemConfigSchema.statics.initializeDefaults = async function() {
       configType: 'array',
       description: 'Faculty types allowed in dropdown for Sem 8 Type 2 Major Project 2 (solo) preferences (Regular, Adjunct, On Lien)',
       category: 'sem8'
+    },
+    {
+      configKey: 'sem8.major2.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to Sem 8 Major Project 2 allocation requests',
+      category: 'sem8'
+    },
+    {
+      configKey: 'sem8.internship2.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to Sem 8 Internship 2 solo allocation requests',
+      category: 'sem8'
+    },
+    // M.Tech windows
+    {
+      configKey: 'mtech.sem3.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to M.Tech Sem 3 Major Project 1 allocation requests',
+      category: 'mtech'
+    },
+    {
+      configKey: 'mtech.sem4.allocationDeadline',
+      configValue: null,
+      configType: 'date',
+      description: 'Deadline for faculty to respond to M.Tech Sem 4 Major Project 2 allocation requests',
+      category: 'mtech'
     }
   ];
 
