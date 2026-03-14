@@ -8,10 +8,10 @@ import { studentAPI } from '../../utils/api';
 import { toast } from 'react-hot-toast';
 import Layout from '../../components/common/Layout';
 import { formatFacultyName } from '../../utils/formatUtils';
-import { 
-  FiCheckCircle, FiInfo, FiTarget, FiUsers, FiFileText, FiUser, FiPhone, 
-  FiStar, FiHash, FiMail, FiChevronUp, FiChevronDown, FiX, FiPlus, FiSearch, 
-  FiLoader, FiUserPlus, FiAlertTriangle, FiArrowLeft, FiAlertCircle, FiZap 
+import {
+  FiCheckCircle, FiInfo, FiTarget, FiUsers, FiFileText, FiUser, FiPhone,
+  FiStar, FiHash, FiMail, FiChevronUp, FiChevronDown, FiX, FiPlus, FiSearch,
+  FiLoader, FiUserPlus, FiAlertTriangle, FiArrowLeft, FiAlertCircle, FiZap
 } from 'react-icons/fi';
 
 const MajorProject1Registration = () => {
@@ -19,18 +19,18 @@ const MajorProject1Registration = () => {
   const { user, roleData } = useAuth();
   const currentSemester = roleData?.semester || user?.semester;
   const isSem8 = currentSemester === 8;
-  
+
   // Use appropriate hooks based on semester
   const sem7Context = useSem7Project();
   const sem8Context = useSem8Project();
-  
-  const { 
-    majorProject1Group: sem7Group, 
-    registerMajorProject1, 
+
+  const {
+    majorProject1Group: sem7Group,
+    registerMajorProject1,
     loading: sem7Loading,
-    finalizedTrack 
+    finalizedTrack
   } = sem7Context || {};
-  
+
   const {
     majorProject2Group: sem8Group,
     registerMajorProject2,
@@ -39,12 +39,12 @@ const MajorProject1Registration = () => {
     isType1,
     isType2
   } = sem8Context || {};
-  
+
   // Select appropriate values based on semester
   const majorProjectGroup = isSem8 ? sem8Group : sem7Group;
   const loading = isSem8 ? sem8Loading : sem7Loading;
   const storagePrefix = isSem8 ? 'majorProject2Registration' : 'majorProject1Registration';
-  
+
   // Initialize state from localStorage or defaults (use semester-specific keys)
   // For Type 2 solo projects: Start at step 1 (Project Details)
   // For Type 1 group projects: Start at step 3 (Group Member Verification)
@@ -89,19 +89,19 @@ const MajorProject1Registration = () => {
     if (isSem8 && sem8Loading) {
       return; // Don't validate while loading
     }
-    
+
     if (currentSemester !== 7 && currentSemester !== 8) {
       toast.error(`${isSem8 ? 'Major Project 2' : 'Major Project 1'} registration is only available for Semester ${isSem8 ? '8' : '7'} students`);
       navigate('/dashboard/student');
       return;
     }
-    
+
     if (currentSemester === 7) {
-    if (finalizedTrack !== 'coursework') {
-      toast.error('Major Project 1 is only available for students finalized for coursework track');
-      navigate('/dashboard/student');
-      return;
-    }
+      if (finalizedTrack !== 'coursework') {
+        toast.error('Major Project 1 is only available for students finalized for coursework track');
+        navigate('/dashboard/student');
+        return;
+      }
     } else if (currentSemester === 8) {
       // For Sem 8, Type 1 students must be in coursework track, Type 2 students must have chosen major2
       // Only validate if we have student type information
@@ -130,18 +130,18 @@ const MajorProject1Registration = () => {
         setGroupLoading(true);
         const targetSemester = isSem8 ? 8 : 7;
         const response = await studentAPI.getGroups({ semester: targetSemester });
-        
+
         if (isSem8 && isType2) {
           // Type 2 students don't need a group (solo project)
           setGroupLoading(false);
           return;
         }
-        
+
         if (response.success && response.data && response.data.length > 0) {
           // Group is already loaded in context, but we validate here
           if (response.data[0].status !== 'finalized') {
             if (!toastShownRef.current) {
-            toast.error(`Your group must be finalized before registering ${isSem8 ? 'Major Project 2' : 'Major Project 1'}`);
+              toast.error(`Your group must be finalized before registering ${isSem8 ? 'Major Project 2' : 'Major Project 1'}`);
               toastShownRef.current = true;
             }
             navigate('/dashboard/student');
@@ -150,12 +150,12 @@ const MajorProject1Registration = () => {
         } else {
           if (isSem8 && isType1) {
             if (!toastShownRef.current) {
-            toast.error('You must be in a finalized group to register Major Project 2');
+              toast.error('You must be in a finalized group to register Major Project 2');
               toastShownRef.current = true;
             }
           } else if (!isSem8) {
             if (!toastShownRef.current) {
-          toast.error('You must be in a finalized group to register Major Project 1');
+              toast.error('You must be in a finalized group to register Major Project 1');
               toastShownRef.current = true;
             }
           }
@@ -165,7 +165,7 @@ const MajorProject1Registration = () => {
       } catch (error) {
         console.error('Failed to load group:', error);
         if (!toastShownRef.current) {
-        toast.error('Failed to load group information');
+          toast.error('Failed to load group information');
           toastShownRef.current = true;
         }
         navigate('/dashboard/student');
@@ -173,7 +173,7 @@ const MajorProject1Registration = () => {
         setGroupLoading(false);
       }
     };
-    
+
     if ((!isSem8 && finalizedTrack === 'coursework') || (isSem8 && (isType1 || isType2))) {
       loadGroup();
     }
@@ -182,17 +182,17 @@ const MajorProject1Registration = () => {
   // Validate group access
   useEffect(() => {
     const currentGroup = majorProjectGroup;
-    
+
     // For Sem 8 Type 2, no group is needed (solo project)
     if (isSem8 && isType2) {
       return;
     }
-    
+
     if (!groupLoading && currentGroup) {
       // Check if group is finalized
       if (currentGroup.status !== 'finalized') {
         if (!toastShownRef.current) {
-        toast.error(`Your group must be finalized before registering ${isSem8 ? 'Major Project 2' : 'Major Project 1'}`);
+          toast.error(`Your group must be finalized before registering ${isSem8 ? 'Major Project 2' : 'Major Project 1'}`);
           toastShownRef.current = true;
         }
         navigate('/dashboard/student');
@@ -200,23 +200,23 @@ const MajorProject1Registration = () => {
       }
 
       // Check if user is group leader
-      const isLeader = currentGroup.leader?._id === roleData?._id || 
-                      currentGroup.leader === roleData?._id ||
-                      (typeof currentGroup.leader === 'object' && currentGroup.leader._id === roleData?._id);
-      
+      const isLeader = currentGroup.leader?._id === roleData?._id ||
+        currentGroup.leader === roleData?._id ||
+        (typeof currentGroup.leader === 'object' && currentGroup.leader._id === roleData?._id);
+
       if (!isLeader) {
         if (!toastShownRef.current) {
-        toast.error('Only the group leader can register the project');
+          toast.error('Only the group leader can register the project');
           toastShownRef.current = true;
         }
         navigate('/dashboard/student');
         return;
       }
-      
+
       const memberCount = currentGroup.members?.filter(m => m.isActive !== false).length || 0;
       if (memberCount < minGroupMembers) {
         if (!toastShownRef.current) {
-        toast.error(`Your group must have at least ${minGroupMembers} members before registering your project`);
+          toast.error(`Your group must have at least ${minGroupMembers} members before registering your project`);
           toastShownRef.current = true;
         }
         navigate('/dashboard/student');
@@ -240,25 +240,25 @@ const MajorProject1Registration = () => {
         } else {
           configPrefix = 'sem7.major1'; // Sem 7: Major Project 1
         }
-        
+
         // Load configs based on prefix
         // For solo projects (Type 2), we don't need min/max group members
         const configPromises = isSem8 && isType2
           ? [
-              studentAPI.getSystemConfig(`${configPrefix}.facultyPreferenceLimit`),
-              Promise.resolve({ success: false }), // minResponse (not needed)
-              Promise.resolve({ success: false }), // maxResponse (not needed)
-              studentAPI.getSystemConfig(`${configPrefix}.allowedFacultyTypes`)
-            ]
+            studentAPI.getSystemConfig(`${configPrefix}.facultyPreferenceLimit`),
+            Promise.resolve({ success: false }), // minResponse (not needed)
+            Promise.resolve({ success: false }), // maxResponse (not needed)
+            studentAPI.getSystemConfig(`${configPrefix}.allowedFacultyTypes`)
+          ]
           : [
-              studentAPI.getSystemConfig(`${configPrefix}.facultyPreferenceLimit`),
-              studentAPI.getSystemConfig(`${configPrefix}.minGroupMembers`),
-              studentAPI.getSystemConfig(`${configPrefix}.maxGroupMembers`),
-              studentAPI.getSystemConfig(`${configPrefix}.allowedFacultyTypes`)
-            ];
-        
+            studentAPI.getSystemConfig(`${configPrefix}.facultyPreferenceLimit`),
+            studentAPI.getSystemConfig(`${configPrefix}.minGroupMembers`),
+            studentAPI.getSystemConfig(`${configPrefix}.maxGroupMembers`),
+            studentAPI.getSystemConfig(`${configPrefix}.allowedFacultyTypes`)
+          ];
+
         const [limitResponse, minResponse, maxResponse, typesResponse] = await Promise.all(configPromises);
-        
+
         // Set faculty preference limit
         if (limitResponse.success && limitResponse.data) {
           const limitValue = limitResponse.data.value || limitResponse.data.configValue;
@@ -279,7 +279,7 @@ const MajorProject1Registration = () => {
             // Ignore fallback errors
           }
         }
-        
+
         // Set min/max group members
         if (minResponse.success && minResponse.data) {
           const minValue = minResponse.data.value || minResponse.data.configValue;
@@ -287,14 +287,14 @@ const MajorProject1Registration = () => {
             setMinGroupMembers(parseInt(minValue));
           }
         }
-        
+
         if (maxResponse.success && maxResponse.data) {
           const maxValue = maxResponse.data.value || maxResponse.data.configValue;
           if (maxValue !== undefined && maxValue !== null) {
             setMaxGroupMembers(parseInt(maxValue));
           }
         }
-        
+
         // Set allowed faculty types
         if (typesResponse.success && typesResponse.data?.value && Array.isArray(typesResponse.data.value)) {
           setAllowedFacultyTypes(typesResponse.data.value);
@@ -316,7 +316,7 @@ const MajorProject1Registration = () => {
     const loadFacultyList = async () => {
       try {
         const response = await studentAPI.getFacultyList();
-        
+
         if (response.success) {
           setFacultyList(response.data);
         } else {
@@ -334,7 +334,7 @@ const MajorProject1Registration = () => {
     if (isSem8 && (studentType === null || studentType === undefined)) {
       return; // Still loading student type
     }
-    
+
     const facultyStep = (isSem8 && studentType === 'type2') ? 2 : 5;
     if (currentStep === facultyStep) {
       loadFacultyList();
@@ -361,10 +361,10 @@ const MajorProject1Registration = () => {
   // Check if form was restored from localStorage
   useEffect(() => {
     const hasStoredData = localStorage.getItem(`${storagePrefix}_currentStep`) ||
-                         localStorage.getItem(`${storagePrefix}_title`) ||
-                         localStorage.getItem(`${storagePrefix}_domain`) ||
-                         localStorage.getItem(`${storagePrefix}_facultyPreferences`);
-    
+      localStorage.getItem(`${storagePrefix}_title`) ||
+      localStorage.getItem(`${storagePrefix}_domain`) ||
+      localStorage.getItem(`${storagePrefix}_facultyPreferences`);
+
     if (hasStoredData) {
       setIsRestoredFromStorage(true);
       setTimeout(() => setIsRestoredFromStorage(false), 5000);
@@ -400,7 +400,7 @@ const MajorProject1Registration = () => {
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
-      
+
       const projectData = {
         title: data.title,
         domain: data.domain === 'Other' ? customDomain : data.domain,
@@ -411,9 +411,9 @@ const MajorProject1Registration = () => {
       if (isSem8) {
         await registerMajorProject2(projectData);
       } else {
-      await registerMajorProject1(projectData);
+        await registerMajorProject1(projectData);
       }
-      
+
       // Clear localStorage on successful completion (use semester-specific keys)
       const storagePrefix = isSem8 ? 'majorProject2Registration' : 'majorProject1Registration';
       localStorage.removeItem(`${storagePrefix}_currentStep`);
@@ -422,7 +422,7 @@ const MajorProject1Registration = () => {
       localStorage.removeItem(`${storagePrefix}_domain`);
       localStorage.removeItem(`${storagePrefix}_customDomain`);
       localStorage.removeItem(`${storagePrefix}_completed`);
-      
+
       toast.success(`${isSem8 ? 'Major Project 2' : 'Major Project 1'} registered successfully!`);
       navigate('/dashboard/student');
     } catch (error) {
@@ -493,7 +493,7 @@ const MajorProject1Registration = () => {
       faculty,
       priority: facultyPreferences.length + 1
     };
-    
+
     setFacultyPreferences([...facultyPreferences, newPreference]);
     toast.success(`${formatFacultyName(faculty)} added to preferences`);
   };
@@ -503,7 +503,7 @@ const MajorProject1Registration = () => {
     const updatedPreferences = facultyPreferences
       .filter(p => p.faculty._id !== facultyId)
       .map((p, index) => ({ ...p, priority: index + 1 }));
-    
+
     setFacultyPreferences(updatedPreferences);
     if (facultyToRemove) {
       toast.success(`${formatFacultyName(facultyToRemove.faculty)} removed from preferences`);
@@ -514,13 +514,13 @@ const MajorProject1Registration = () => {
     const updatedPreferences = [...facultyPreferences];
     const [movedItem] = updatedPreferences.splice(fromIndex, 1);
     updatedPreferences.splice(toIndex, 0, movedItem);
-    
+
     // Update priorities
     const reorderedPreferences = updatedPreferences.map((p, index) => ({
       ...p,
       priority: index + 1
     }));
-    
+
     setFacultyPreferences(reorderedPreferences);
   };
 
@@ -530,24 +530,24 @@ const MajorProject1Registration = () => {
       const matchesDepartment = selectedDepartment === 'all' || faculty.department === selectedDepartment;
       const matchesType = allowedFacultyTypes.includes(faculty.mode);
       const notSelected = !facultyPreferences.some(p => p.faculty._id === faculty._id);
-      
+
       return matchesSearch && matchesDepartment && matchesType && notSelected;
     });
   };
 
   const getGroupMembers = () => {
     if (!majorProjectGroup || !majorProjectGroup.members) return [];
-    
+
     // Filter to only active members
     const activeMembers = majorProjectGroup.members.filter(m => m.isActive !== false);
-    
+
     // Sort members: leader first, then members
     const sortedMembers = [...activeMembers].sort((a, b) => {
       if (a.role === 'leader') return -1;
       if (b.role === 'leader') return 1;
       return 0;
     });
-    
+
     return sortedMembers;
   };
 
@@ -562,15 +562,15 @@ const MajorProject1Registration = () => {
 
   const isGroupLeader = () => {
     if (!majorProjectGroup || !majorProjectGroup.leader) return false;
-    return majorProjectGroup.leader?._id === roleData?._id || 
-           majorProjectGroup.leader === roleData?._id ||
-           (typeof majorProjectGroup.leader === 'object' && majorProjectGroup.leader._id === roleData?._id);
+    return majorProjectGroup.leader?._id === roleData?._id ||
+      majorProjectGroup.leader === roleData?._id ||
+      (typeof majorProjectGroup.leader === 'object' && majorProjectGroup.leader._id === roleData?._id);
   };
 
   const renderStep3 = () => {
     const groupMembers = getGroupMembers();
     const memberCount = groupMembers.length;
-    
+
     return (
       <div className="space-y-3">
         {/* Read-only notice */}
@@ -579,13 +579,13 @@ const MajorProject1Registration = () => {
           <p className="text-[11px] text-info-800">
             Member details are read-only. If any information is incorrect, the respective student must update it from their profile page.
           </p>
-      </div>
+        </div>
 
         {/* Group size summary */}
         <div className="bg-surface-50 border border-neutral-200 rounded-lg px-3 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FiUsers className="w-4 h-4 text-primary-600" />
-          <div>
+            <div>
               <p className="text-xs font-semibold text-neutral-900">
                 {memberCount} / {minGroupMembers}-{maxGroupMembers} members
               </p>
@@ -594,15 +594,15 @@ const MajorProject1Registration = () => {
                   Minimum required: {minGroupMembers}
                 </p>
               )}
+            </div>
           </div>
-        </div>
           {memberCount >= minGroupMembers && memberCount <= maxGroupMembers && (
             <div className="flex items-center gap-1 text-success-700">
               <FiCheckCircle className="w-3.5 h-3.5" />
               <span className="text-[11px] font-medium">Valid</span>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
         {/* Member cards */}
         <div className="space-y-2.5">
@@ -612,11 +612,10 @@ const MajorProject1Registration = () => {
               className="bg-white border border-neutral-200 rounded-lg px-3 py-2.5 flex items-start gap-3"
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-                  member.role === 'leader'
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${member.role === 'leader'
                     ? 'bg-primary-100 text-primary-800'
                     : 'bg-info-100 text-info-800'
-                }`}
+                  }`}
               >
                 {(member.student?.fullName || ' ? ')?.charAt(0).toUpperCase()}
               </div>
@@ -626,13 +625,13 @@ const MajorProject1Registration = () => {
                     {member.student?.fullName || 'Unknown member'}
                   </p>
                   <span className="text-[11px] text-neutral-500">#{index + 1}</span>
-              {member.role === 'leader' && (
+                  {member.role === 'leader' && (
                     <span className="inline-flex items-center gap-1 text-[11px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded-full font-medium">
                       <FiStar className="w-3 h-3" />
                       <span>Leader</span>
-                </span>
-              )}
-            </div>
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-neutral-600 mt-0.5 truncate">
                   <span className="inline-flex items-center gap-1 mr-2">
                     <span>MIS:</span>
@@ -652,29 +651,29 @@ const MajorProject1Registration = () => {
                     <span>{member.student.contactNumber}</span>
                   </p>
                 )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
         <div className="flex justify-between pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
+          <button
+            type="button"
+            onClick={onCancel}
             className="px-4 py-2.5 text-sm text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-400 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={nextStep}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={nextStep}
             className="px-4 py-2.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
-        >
-          Continue to Project Details
-        </button>
+          >
+            Continue to Project Details
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
   };
 
   const renderStep4 = () => (
@@ -698,9 +697,8 @@ const MajorProject1Registration = () => {
                 message: 'Title cannot exceed 100 characters'
               }
             })}
-            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors.title ? 'border-error-500' : 'border-neutral-300'
-            }`}
+            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.title ? 'border-error-500' : 'border-neutral-300'
+              }`}
             placeholder="Enter your project title"
           />
           {errors.title && (
@@ -720,10 +718,9 @@ const MajorProject1Registration = () => {
             {...register('domain', {
               required: 'Please select a project domain'
             })}
-            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-white ${
-              errors.domain ? 'border-error-500' : 'border-neutral-300'
-            }`}
-            style={{ 
+            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 appearance-none bg-white ${errors.domain ? 'border-error-500' : 'border-neutral-300'
+              }`}
+            style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
               backgroundPosition: 'right 0.75rem center',
               backgroundRepeat: 'no-repeat',
@@ -750,7 +747,7 @@ const MajorProject1Registration = () => {
           {errors.domain && (
             <p className="mt-1 text-xs text-error-600">{errors.domain.message}</p>
           )}
-      
+
           {/* Custom domain input - only show when "Other" is selected */}
           {watchedDomain === 'Other' && (
             <div className="mt-3">
@@ -804,7 +801,7 @@ const MajorProject1Registration = () => {
         </div>
       );
     }
-    
+
     return (
       <div className="space-y-4">
         {/* Instructions */}
@@ -833,7 +830,7 @@ const MajorProject1Registration = () => {
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
                 <FiUsers className="w-4 h-4 text-primary-600" />
-              Your Preferences ({facultyPreferences.length}/{facultyPreferenceLimit})
+                Your Preferences ({facultyPreferences.length}/{facultyPreferenceLimit})
               </h3>
               {facultyPreferences.length === facultyPreferenceLimit && (
                 <span className="inline-flex items-center gap-1 text-xs text-success-700 font-medium">
@@ -842,9 +839,9 @@ const MajorProject1Registration = () => {
                 </span>
               )}
             </div>
-            
+
             <div className="flex-1 min-h-0 overflow-hidden">
-            {facultyPreferences.length === 0 ? (
+              {facultyPreferences.length === 0 ? (
                 <div className="bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center h-full flex flex-col items-center justify-center">
                   <FiUserPlus className="mx-auto h-10 w-10 text-neutral-400 mb-2" />
                   <p className="text-sm font-medium text-neutral-600 mb-1">No faculty selected yet</p>
@@ -853,62 +850,62 @@ const MajorProject1Registration = () => {
                     <FiAlertTriangle className="w-3 h-3" />
                     Select exactly {facultyPreferenceLimit} faculty members
                   </p>
-              </div>
-            ) : (
+                </div>
+              ) : (
                 <div className="h-full overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pr-2">
-                {facultyPreferences.map((preference, index) => (
-                  <div
-                    key={preference.faculty._id}
-                    className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-blue-600">{index + 1}</span>
+                  {facultyPreferences.map((preference, index) => (
+                    <div
+                      key={preference.faculty._id}
+                      className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="flex-shrink-0">
+                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium text-blue-600">{index + 1}</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {formatFacultyName(preference.faculty)}
+                            </p>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {preference.faculty.department}
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {formatFacultyName(preference.faculty)}
-                          </p>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {preference.faculty.department}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1 ml-2">
-                        {index > 0 && (
-                          <button
-                            onClick={() => movePreference(index, index - 1)}
+                        <div className="flex items-center space-x-1 ml-2">
+                          {index > 0 && (
+                            <button
+                              onClick={() => movePreference(index, index - 1)}
                               className="p-1.5 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                            title="Move up"
-                          >
+                              title="Move up"
+                            >
                               <FiChevronUp className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {index < facultyPreferences.length - 1 && (
-                          <button
-                            onClick={() => movePreference(index, index + 1)}
+                            </button>
+                          )}
+                          {index < facultyPreferences.length - 1 && (
+                            <button
+                              onClick={() => movePreference(index, index + 1)}
                               className="p-1.5 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                            title="Move down"
-                          >
+                              title="Move down"
+                            >
                               <FiChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => removeFacultyPreference(preference.faculty._id)}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => removeFacultyPreference(preference.faculty._id)}
                             className="p-1.5 text-error-400 hover:text-error-600 hover:bg-error-50 rounded transition-colors"
-                          title="Remove"
-                        >
+                            title="Remove"
+                          >
                             <FiX className="w-3.5 h-3.5" />
-                        </button>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -918,7 +915,7 @@ const MajorProject1Registration = () => {
               <FiUser className="w-4 h-4 text-primary-600" />
               Available Faculty
             </h3>
-            
+
             {/* Search and Filter */}
             <div className="space-y-2 mb-3 flex-shrink-0">
               <div className="relative">
@@ -936,7 +933,7 @@ const MajorProject1Registration = () => {
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
-                  style={{ 
+                  style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
                     backgroundPosition: 'right 0.5rem center',
                     backgroundRepeat: 'no-repeat',
@@ -1001,11 +998,10 @@ const MajorProject1Registration = () => {
             type="button"
             onClick={handleSubmit(onSubmit)}
             disabled={facultyPreferences.length !== facultyPreferenceLimit || isSubmitting || loading}
-            className={`px-6 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center ${
-              facultyPreferences.length === facultyPreferenceLimit
+            className={`px-6 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center ${facultyPreferences.length === facultyPreferenceLimit
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+              }`}
           >
             {isSubmitting ? (
               <>
@@ -1034,7 +1030,7 @@ const MajorProject1Registration = () => {
     return (
       <Layout>
         <div className="h-[calc(100vh-64px)] bg-surface-200 flex items-center justify-center">
-              <div className="text-center">
+          <div className="text-center">
             <FiLoader className="w-10 h-10 text-primary-600 animate-spin mx-auto mb-3" />
             <h2 className="text-base font-semibold text-neutral-900 mb-1">Loading registration form</h2>
             <p className="text-xs text-neutral-600">Fetching your group information...</p>
@@ -1066,8 +1062,8 @@ const MajorProject1Registration = () => {
                 {isSem8 ? 'Major Project 2' : 'Major Project 1'} – Registration
               </h1>
               <p className="mt-0.5 text-xs text-neutral-600">
-                {isSem8 && isType2 
-                  ? 'Register your solo Major Project 2 (Semester 8)' 
+                {isSem8 && isType2
+                  ? 'Register your solo Major Project 2 (Semester 8)'
                   : `Register your B.Tech Semester ${currentSemester} ${isSem8 ? 'Major Project 2' : 'Major Project 1'}`}
               </p>
             </div>
@@ -1077,10 +1073,10 @@ const MajorProject1Registration = () => {
             >
               <FiX className="w-4 h-4" />
             </button>
-        </div>
+          </div>
 
           {/* Optional restore banner */}
-        {isRestoredFromStorage && (
+          {isRestoredFromStorage && (
             <div className="mt-3 mb-1 rounded-lg border border-info-200 bg-info-50 px-3 py-2 flex items-center gap-2">
               <FiInfo className="h-4 w-4 text-info-500 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -1089,14 +1085,14 @@ const MajorProject1Registration = () => {
                   Your saved progress has been loaded. Review details before submitting.
                 </p>
               </div>
-                <button
-                  onClick={() => setIsRestoredFromStorage(false)}
+              <button
+                onClick={() => setIsRestoredFromStorage(false)}
                 className="text-info-500 hover:text-info-700 p-1"
-                >
+              >
                 <FiX className="h-3.5 w-3.5" />
-                </button>
-          </div>
-        )}
+              </button>
+            </div>
+          )}
 
           {/* Main layout */}
           <div className="mt-3 flex flex-col lg:flex-row gap-3 lg:gap-4 flex-1 min-h-0">
@@ -1106,51 +1102,51 @@ const MajorProject1Registration = () => {
               <div className="bg-white rounded-xl border border-neutral-200 flex flex-col">
                 <div className="px-4 py-3 border-b border-neutral-200">
                   <h2 className="text-sm font-semibold text-neutral-900">
-              {isSem8 && isType2 ? (
-                <>
+                    {isSem8 && isType2 ? (
+                      <>
                         {currentStep === 1 && 'Step 1 · Project Details'}
                         {currentStep === 2 && 'Step 2 · Faculty Preferences'}
-                </>
-              ) : (
-                <>
+                      </>
+                    ) : (
+                      <>
                         {currentStep === 3 && 'Step 3 · Group Member Verification'}
                         {currentStep === 4 && 'Step 4 · Project Details'}
                         {currentStep === 5 && 'Step 5 · Faculty Preferences'}
-                </>
-              )}
-            </h2>
+                      </>
+                    )}
+                  </h2>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
-              {isSem8 && isType2 ? (
-                <>
+                    {isSem8 && isType2 ? (
+                      <>
                         {currentStep === 1 && 'Provide basic information about your project.'}
                         {currentStep === 2 && 'Choose and prioritize your preferred faculty mentors.'}
-                </>
-              ) : (
-                <>
+                      </>
+                    ) : (
+                      <>
                         {currentStep === 3 && 'Review member information below.'}
                         {currentStep === 4 && 'Provide basic information about your project.'}
                         {currentStep === 5 && 'Choose and prioritize your preferred faculty mentors.'}
-                </>
-              )}
-            </p>
-          </div>
+                      </>
+                    )}
+                  </p>
+                </div>
 
                 <div className="px-4 py-3 flex-1 min-h-0 overflow-visible">
-            {isSem8 && isType2 ? (
-              <>
-                {currentStep === 1 && renderStep4()}
-                {currentStep === 2 && renderStep5()}
-              </>
-            ) : (
-              <>
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-            {currentStep === 5 && renderStep5()}
-              </>
-            )}
+                  {isSem8 && isType2 ? (
+                    <>
+                      {currentStep === 1 && renderStep4()}
+                      {currentStep === 2 && renderStep5()}
+                    </>
+                  ) : (
+                    <>
+                      {currentStep === 3 && renderStep3()}
+                      {currentStep === 4 && renderStep4()}
+                      {currentStep === 5 && renderStep5()}
+                    </>
+                  )}
                 </div>
-          </div>
-        </div>
+              </div>
+            </div>
 
             {/* Right: progress & info */}
             <div className="flex-[0.35] flex flex-col h-full min-h-0 space-y-3 mt-4 lg:mt-0 overflow-y-auto custom-scrollbar pl-1">
@@ -1191,7 +1187,7 @@ const MajorProject1Registration = () => {
                       </div>
                     </>
                   )}
-                  
+
                   {/* Current steps */}
                   <div className="mt-1 space-y-1.5">
                     {Array.from({ length: maxStep - minStep + 1 }, (_, i) => {
@@ -1199,7 +1195,7 @@ const MajorProject1Registration = () => {
                       const stepLabel = getStepLabel(step);
                       const isCompleted = currentStep > step;
                       const isCurrent = currentStep === step;
-                      
+
                       return (
                         <div key={step}>
                           <div className="flex items-center justify-between text-[11px] text-neutral-600">
@@ -1210,9 +1206,8 @@ const MajorProject1Registration = () => {
                           </div>
                           <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full ${
-                                isCompleted || isCurrent ? 'bg-gradient-to-r from-primary-500 to-success-500' : 'bg-neutral-300'
-                              }`}
+                              className={`h-full rounded-full ${isCompleted || isCurrent ? 'bg-gradient-to-r from-primary-500 to-success-500' : 'bg-neutral-300'
+                                }`}
                               style={{ width: isCompleted || isCurrent ? '100%' : '0%' }}
                             />
                           </div>
@@ -1239,15 +1234,15 @@ const MajorProject1Registration = () => {
                   )}
                   <p>
                     • <strong>Current step:</strong>{' '}
-                    {isSem8 && isType2 
-                ? (currentStep === 1 ? 'Entering project details' : 'Selecting faculty preferences')
-                : (currentStep === 3 ? 'Verifying group member details' : currentStep === 4 ? 'Entering project details' : 'Selecting faculty preferences')
+                    {isSem8 && isType2
+                      ? (currentStep === 1 ? 'Entering project details' : 'Selecting faculty preferences')
+                      : (currentStep === 3 ? 'Verifying group member details' : currentStep === 4 ? 'Entering project details' : 'Selecting faculty preferences')
                     }
                   </p>
                   {!(isSem8 && isType2) && (
                     <p>• <strong>Leader only:</strong> Only the group leader can register the project details.</p>
                   )}
-                  <p>• <strong>Faculty allocation:</strong> Faculty members review and choose projects based on your preferences.</p>
+                  <p>• <strong>Faculty allocation:</strong> Faculty are reviewing your group. Allocation happens after the response deadline.</p>
                   {!isSem8 && (
                     <p>• <strong>New Group:</strong> Major Project 1 requires a completely new group formation.</p>
                   )}
@@ -1258,8 +1253,8 @@ const MajorProject1Registration = () => {
                     <p>• <strong>Solo Project:</strong> Major Project 2 for Type 2 students is a solo project (no group required).</p>
                   )}
                   <p>• <strong>Duration:</strong> Full semester project with regular evaluations.</p>
-          </div>
-        </div>
+                </div>
+              </div>
 
               {/* Tips */}
               <div className="bg-surface-100 rounded-xl border border-neutral-200 p-3">

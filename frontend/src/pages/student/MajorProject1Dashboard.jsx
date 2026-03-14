@@ -51,28 +51,28 @@ const MajorProject1Dashboard = () => {
   // For members, verify they are actually in the group's members array
   const validSem7Group = (() => {
     if (!majorProject1Group) return null;
-    
+
     // Check semester
     if (majorProject1Group.semester !== 7 && majorProject1Group.semester !== '7') {
       return null;
     }
-    
+
     // Verify student is actually a member (important for members who just joined)
     const studentId = roleData?._id || user?._id;
     if (!studentId) return null;
-    
+
     const isMember = majorProject1Group.members?.some(m => {
       const memberId = m.student?._id || m.student;
       return memberId && memberId.toString() === studentId.toString() && m.isActive !== false;
     });
-    
+
     return isMember ? majorProject1Group : null;
   })();
 
   // Check if user is group leader (only for valid Sem 7 group)
-  const isGroupLeader = validSem7Group && 
-                       (validSem7Group.leader?._id === roleData?._id || 
-                        validSem7Group.leader === roleData?._id);
+  const isGroupLeader = validSem7Group &&
+    (validSem7Group.leader?._id === roleData?._id ||
+      validSem7Group.leader === roleData?._id);
 
   // Get current step first
   const currentStep = getNextStep ? getNextStep() : 'create_group';
@@ -125,12 +125,12 @@ const MajorProject1Dashboard = () => {
                 </div>
               </div>
               {majorProject1 && (
-                <StatusBadge 
+                <StatusBadge
                   status={
                     majorProject1.status === 'active' ? 'success' :
-                    majorProject1.status === 'faculty_allocated' ? 'info' :
-                    majorProject1.status === 'registered' ? 'warning' :
-                    'warning'
+                      majorProject1.status === 'faculty_allocated' ? 'info' :
+                        majorProject1.status === 'registered' ? 'warning' :
+                          'warning'
                   }
                   text={majorProject1.status}
                 />
@@ -142,11 +142,11 @@ const MajorProject1Dashboard = () => {
         {/* Main Content - 3 Column Layout */}
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-0">
-            
+
             {/* Left Sidebar - Progress & Quick Info */}
             <div className="lg:col-span-2 bg-surface-100 border-r border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4">
-                
+
                 {/* Progress Tracker */}
                 <div className="bg-white rounded-xl p-4 border border-neutral-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
@@ -198,8 +198,8 @@ const MajorProject1Dashboard = () => {
                       <span className="text-xs font-medium text-neutral-800">
                         {validSem7Group ? (
                           validSem7Group.status === 'finalized' ? 'Finalized' :
-                          validSem7Group.status === 'locked' ? 'Allocated' :
-                          'In Progress'
+                            validSem7Group.status === 'locked' ? 'Allocated' :
+                              'In Progress'
                         ) : 'No Group'}
                       </span>
                     </div>
@@ -253,7 +253,7 @@ const MajorProject1Dashboard = () => {
             {/* Center Column - Main Content */}
             <div className="lg:col-span-7 bg-surface-50 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 lg:p-6 space-y-4 pb-6">
-                
+
                 {/* Step 1: Create Group */}
                 {!validSem7Group && (
                   <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
@@ -267,7 +267,7 @@ const MajorProject1Dashboard = () => {
                     </div>
                     <div className="p-5">
                       <p className="text-sm text-neutral-700 mb-4 leading-relaxed">
-                        Form a new group for Major Project 1. You can invite other coursework students to join your group. 
+                        Form a new group for Major Project 1. You can invite other coursework students to join your group.
                         Groups should have {minMembers}-{maxMembers} members.
                       </p>
                       <Link
@@ -326,9 +326,9 @@ const MajorProject1Dashboard = () => {
                             Faculty Guide
                           </label>
                           <p className="text-sm text-neutral-800 mt-1">
-                            {formatFacultyName(majorProject1.faculty) || 
-                             formatFacultyName(validSem7Group?.allocatedFaculty) || 
-                             'Not allocated yet'}
+                            {formatFacultyName(majorProject1.faculty) ||
+                              formatFacultyName(validSem7Group?.allocatedFaculty) ||
+                              'Not allocated yet'}
                           </p>
                         </div>
                       )}
@@ -337,12 +337,12 @@ const MajorProject1Dashboard = () => {
                           Status
                         </label>
                         <div className="mt-1">
-                          <StatusBadge 
+                          <StatusBadge
                             status={
                               majorProject1.status === 'active' ? 'success' :
-                              majorProject1.status === 'faculty_allocated' ? 'info' :
-                              majorProject1.status === 'registered' ? 'warning' :
-                              'warning'
+                                majorProject1.status === 'faculty_allocated' ? 'info' :
+                                  majorProject1.status === 'registered' ? 'warning' :
+                                    'warning'
                             }
                             text={majorProject1.status}
                           />
@@ -353,64 +353,64 @@ const MajorProject1Dashboard = () => {
                 )}
 
                 {/* Register Project Section */}
-                {validSem7Group && 
-                 validSem7Group.status === 'finalized' && 
-                 !majorProject1 && 
-                 isGroupLeader && (
-                  <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <FiCheckCircle className="w-5 h-5 text-white" />
-                        <h2 className="text-lg font-bold text-white">
-                          Ready to Register Project
-                        </h2>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-start gap-2">
-                          <FiCheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-semibold text-success-900 mb-1">
-                              Group Finalized Successfully
-                            </p>
-                            <p className="text-xs text-success-700">
-                              Your group is finalized with {memberCount} members. As the group leader, you can now register the project details and submit faculty preferences.
-                            </p>
-                          </div>
+                {validSem7Group &&
+                  validSem7Group.status === 'finalized' &&
+                  !majorProject1 &&
+                  isGroupLeader && (
+                    <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
+                      <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <FiCheckCircle className="w-5 h-5 text-white" />
+                          <h2 className="text-lg font-bold text-white">
+                            Ready to Register Project
+                          </h2>
                         </div>
                       </div>
-                      <Link
-                        to="/student/sem7/major1/register"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
-                      >
-                        <FiFileText className="w-4 h-4" />
-                        Register Major Project 1
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* Waiting for Leader */}
-                {validSem7Group && 
-                 validSem7Group.status === 'finalized' && 
-                 !majorProject1 && 
-                 !isGroupLeader && (
-                  <div className="bg-info-50 border border-info-200 rounded-xl p-5">
-                    <div className="flex items-start gap-3">
-                      <FiInfo className="w-5 h-5 text-info-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-semibold text-info-900 mb-1">
-                          Waiting for Group Leader
-                        </h3>
-                        <p className="text-xs text-info-700 leading-relaxed">
-                          Your group is finalized. Please wait for the group leader to register Major Project 1. 
-                          You'll be notified once the project is registered.
-                        </p>
+                      <div className="p-5">
+                        <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-start gap-2">
+                            <FiCheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-semibold text-success-900 mb-1">
+                                Group Finalized Successfully
+                              </p>
+                              <p className="text-xs text-success-700">
+                                Your group is finalized with {memberCount} members. As the group leader, you can now register the project details and submit faculty preferences.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Link
+                          to="/student/sem7/major1/register"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
+                        >
+                          <FiFileText className="w-4 h-4" />
+                          Register Major Project 1
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                {/* Waiting for Leader */}
+                {validSem7Group &&
+                  validSem7Group.status === 'finalized' &&
+                  !majorProject1 &&
+                  !isGroupLeader && (
+                    <div className="bg-info-50 border border-info-200 rounded-xl p-5">
+                      <div className="flex items-start gap-3">
+                        <FiInfo className="w-5 h-5 text-info-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="text-sm font-semibold text-info-900 mb-1">
+                            Waiting for Group Leader
+                          </h3>
+                          <p className="text-xs text-info-700 leading-relaxed">
+                            Your group is finalized. Please wait for the group leader to register Major Project 1.
+                            You'll be notified once the project is registered.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Group Dashboard Card */}
                 {validSem7Group && validSem7Group._id && (
@@ -437,18 +437,18 @@ const MajorProject1Dashboard = () => {
                           Status
                         </label>
                         <div className="mt-1">
-                          <StatusBadge 
+                          <StatusBadge
                             status={
                               validSem7Group.status === 'finalized' ? 'success' :
-                              validSem7Group.status === 'locked' ? 'success' :
-                              validSem7Group.status === 'open' ? 'info' :
-                              validSem7Group.status === 'invitations_sent' ? 'warning' :
-                              'warning'
+                                validSem7Group.status === 'locked' ? 'success' :
+                                  validSem7Group.status === 'open' ? 'info' :
+                                    validSem7Group.status === 'invitations_sent' ? 'warning' :
+                                      'warning'
                             }
                             text={
                               validSem7Group.status === 'locked' ? 'Allocated' :
-                              validSem7Group.status === 'finalized' ? 'Finalized' :
-                              validSem7Group.status || 'Unknown'
+                                validSem7Group.status === 'finalized' ? 'Finalized' :
+                                  validSem7Group.status || 'Unknown'
                             }
                           />
                         </div>
@@ -466,7 +466,7 @@ const MajorProject1Dashboard = () => {
                           )}
                         </p>
                       </div>
-                      
+
                       {/* Open Group Dashboard Button - Moved here for better visibility */}
                       <div className="pt-2">
                         <Link
@@ -478,19 +478,19 @@ const MajorProject1Dashboard = () => {
                         </Link>
                       </div>
 
-                      {validSem7Group.status && 
-                       validSem7Group.status !== 'finalized' && 
-                       validSem7Group.status !== 'locked' &&
-                       !majorProject1 && (
-                        <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
-                          <div className="flex items-start gap-2">
-                            <FiAlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-warning-800">
-                              <strong>Action Required:</strong> Please finalize your group before registering the project.
-                            </p>
+                      {validSem7Group.status &&
+                        validSem7Group.status !== 'finalized' &&
+                        validSem7Group.status !== 'locked' &&
+                        !majorProject1 && (
+                          <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <FiAlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-xs text-warning-800">
+                                <strong>Action Required:</strong> Please finalize your group before registering the project.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                       {validSem7Group.status === 'locked' && (
                         <div className="bg-success-50 border border-success-200 rounded-lg p-3">
                           <div className="flex items-start gap-2">
@@ -510,7 +510,7 @@ const MajorProject1Dashboard = () => {
             {/* Right Sidebar - Info & Tips */}
             <div className="lg:col-span-3 bg-surface-100 border-l border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4 pb-6">
-                
+
                 {/* About Major Project 1 */}
                 <div className="bg-white rounded-xl p-4 border border-neutral-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-3">
@@ -521,7 +521,7 @@ const MajorProject1Dashboard = () => {
                   </div>
                   <div className="space-y-2 text-xs text-neutral-700 leading-relaxed">
                     <p>
-                      Major Project 1 is a group-based project for Semester 7 coursework track students. 
+                      Major Project 1 is a group-based project for Semester 7 coursework track students.
                       You'll work with a team of {minMembers}-{maxMembers} members under faculty guidance.
                     </p>
                     <p>
@@ -609,14 +609,14 @@ const MajorProject1Dashboard = () => {
                       <>
                         <p>• Group leader should register the project as soon as possible</p>
                         <p>• Submit at least 7 faculty preferences during registration</p>
-                        <p>• Faculty members review and choose projects based on your preferences</p>
+                        <p>• Faculty are reviewing your group. Allocation happens after the response deadline.</p>
                       </>
                     )}
                     {majorProject1 && !majorProject1.faculty && !validSem7Group?.allocatedFaculty && (
                       <>
-                        <p>• Faculty members are reviewing projects based on preferences</p>
+                        <p>• Faculty are reviewing your group preferences.</p>
                         <p>• Check back regularly for updates</p>
-                        <p>• You'll be notified when a faculty member chooses your project</p>
+                        <p>• You will be notified once a faculty member is allocated after the response deadline.</p>
                       </>
                     )}
                     {majorProject1 && (majorProject1.faculty || validSem7Group?.allocatedFaculty) && (

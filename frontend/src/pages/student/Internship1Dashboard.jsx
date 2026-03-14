@@ -18,10 +18,10 @@ const Internship1Dashboard = () => {
   const navigate = useNavigate();
   const { user, roleData } = useAuth();
   const location = useLocation();
-  
+
   // Determine if this is Internship 2 route (Sem 8)
   const isInternship2Route = location.pathname === '/student/sem8/internship2/dashboard';
-  
+
   const {
     internship1Project: sem7Internship1Project,
     internship1Status: sem7Internship1Status,
@@ -33,34 +33,34 @@ const Internship1Dashboard = () => {
     getInternshipApplication,
     getInternship1ProgressSteps
   } = useSem7Project();
-  const { 
-    sem8Status, 
+  const {
+    sem8Status,
     loading: sem8Loading,
     internship2Project,
     internship2Status,
     fetchSem8Data,
     internshipApplications: sem8InternshipApplications
   } = useSem8();
-  
+
   // Determine current semester and student type
   const currentSemester = roleData?.semester || user?.semester;
   const isSem8 = currentSemester === 8;
   const isSem7 = currentSemester === 7;
   const isType1 = isSem8 && sem8Status?.studentType === 'type1';
-  
+
   // State for Sem 8 Internship 1 project and status
   const [sem8Internship1Project, setSem8Internship1Project] = useState(null);
   const [sem8Internship1Status, setSem8Internship1Status] = useState(null);
-  
+
   // Use appropriate project and status based on route and semester
-  const internship1Project = isInternship2Route 
-    ? internship2Project 
+  const internship1Project = isInternship2Route
+    ? internship2Project
     : (isSem8 ? sem8Internship1Project : sem7Internship1Project);
   const internship1Status = isInternship2Route
     ? internship2Status
     : (isSem8 ? sem8Internship1Status : sem7Internship1Status);
   const loading = isSem8 ? sem8Loading : sem7Loading;
-  
+
   // Determine display labels
   const internshipLabel = isInternship2Route ? 'Internship 2' : 'Internship 1';
   const internshipProjectLabel = isInternship2Route ? 'Internship 2 Project' : 'Internship 1 Project';
@@ -81,9 +81,9 @@ const Internship1Dashboard = () => {
         } else {
           try {
             let foundProject = null;
-            const projectResponse = await studentAPI.getProjects({ 
-              semester: 8, 
-              projectType: 'internship1' 
+            const projectResponse = await studentAPI.getProjects({
+              semester: 8,
+              projectType: 'internship1'
             });
             if (projectResponse.success && projectResponse.data && projectResponse.data.length > 0) {
               const activeProject = projectResponse.data.find(p => p.status !== 'cancelled');
@@ -111,9 +111,9 @@ const Internship1Dashboard = () => {
 
   // Refresh data when navigating to this page
   useEffect(() => {
-    const isInternshipDashboard = location.pathname === '/student/sem7/internship1/dashboard' || 
-                                   location.pathname === '/student/sem8/internship1/dashboard' ||
-                                   location.pathname === '/student/sem8/internship2/dashboard';
+    const isInternshipDashboard = location.pathname === '/student/sem7/internship1/dashboard' ||
+      location.pathname === '/student/sem8/internship1/dashboard' ||
+      location.pathname === '/student/sem8/internship2/dashboard';
     if (prevLocationRef.current !== location.pathname && isInternshipDashboard) {
       const refreshData = async () => {
         if (isSem7) {
@@ -126,9 +126,9 @@ const Internship1Dashboard = () => {
           } else {
             try {
               let foundProject = null;
-              const projectResponse = await studentAPI.getProjects({ 
-                semester: 8, 
-                projectType: 'internship1' 
+              const projectResponse = await studentAPI.getProjects({
+                semester: 8,
+                projectType: 'internship1'
               });
               if (projectResponse.success && projectResponse.data && projectResponse.data.length > 0) {
                 const activeProject = projectResponse.data.find(p => p.status !== 'cancelled');
@@ -179,13 +179,13 @@ const Internship1Dashboard = () => {
     ? (sem8InternshipApplications || []).find(app => app.type === 'summer' && app.semester === 8)
     : getInternshipApplication('summer');
   const hasSummerApp = !!summerApp;
-  const summerAppApproved = hasApprovedSummerInternship || 
-                            (summerApp && (summerApp.status === 'approved' || summerApp.status === 'verified_pass'));
+  const summerAppApproved = hasApprovedSummerInternship ||
+    (summerApp && (summerApp.status === 'approved' || summerApp.status === 'verified_pass'));
 
   // Check if application was rejected due to track change to project
-  const isRejectedDueToTrackChange = summerApp && 
+  const isRejectedDueToTrackChange = summerApp &&
     (summerApp.status === 'verified_fail' || summerApp.status === 'absent') &&
-    summerApp.adminRemarks && 
+    summerApp.adminRemarks &&
     summerApp.adminRemarks.includes('Switched to Internship-I under Institute Faculty');
 
   // Determine selected path
@@ -208,10 +208,10 @@ const Internship1Dashboard = () => {
   }
 
   // If project exists and is active, show project dashboard card in center (not redirect)
-  const hasActiveProject = internship1Project && 
-    (internship1Project.status === undefined || 
-     internship1Project.status === null || 
-     internship1Project.status !== 'cancelled');
+  const hasActiveProject = internship1Project &&
+    (internship1Project.status === undefined ||
+      internship1Project.status === null ||
+      internship1Project.status !== 'cancelled');
 
   return (
     <Layout>
@@ -240,12 +240,12 @@ const Internship1Dashboard = () => {
                 </div>
               </div>
               {hasActiveProject && (
-                <StatusBadge 
+                <StatusBadge
                   status={
                     internship1Project.status === 'active' ? 'success' :
-                    internship1Project.status === 'faculty_allocated' ? 'info' :
-                    internship1Project.status === 'registered' ? 'warning' :
-                    'warning'
+                      internship1Project.status === 'faculty_allocated' ? 'info' :
+                        internship1Project.status === 'registered' ? 'warning' :
+                          'warning'
                   }
                   text={internship1Project.status || 'Registered'}
                 />
@@ -257,11 +257,11 @@ const Internship1Dashboard = () => {
         {/* Main Content - 3 Column Layout */}
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-0">
-            
+
             {/* Left Sidebar - Progress & Quick Info */}
             <div className="lg:col-span-2 bg-surface-100 border-r border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4">
-                
+
                 {/* Progress Tracker */}
                 <div className="bg-white rounded-xl p-4 border border-neutral-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
@@ -311,9 +311,9 @@ const Internship1Dashboard = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-neutral-600">Path Selected:</span>
                       <span className="text-xs font-medium text-neutral-800">
-                        {selectedPath === 'summer' ? 'Summer App' : 
-                         selectedPath === 'project' ? 'Solo Project' : 
-                         'Not Selected'}
+                        {selectedPath === 'summer' ? 'Summer App' :
+                          selectedPath === 'project' ? 'Solo Project' :
+                            'Not Selected'}
                       </span>
                     </div>
                     {selectedPath === 'summer' && (
@@ -321,9 +321,9 @@ const Internship1Dashboard = () => {
                         <span className="text-xs text-neutral-600">App Status:</span>
                         <span className="text-xs font-medium text-neutral-800">
                           {summerApp?.status === 'verified_pass' ? 'Approved' :
-                           summerApp?.status === 'needs_info' ? 'Update Required' :
-                           summerApp?.status === 'submitted' ? 'Submitted' :
-                           summerApp?.status || 'N/A'}
+                            summerApp?.status === 'needs_info' ? 'Update Required' :
+                              summerApp?.status === 'submitted' ? 'Submitted' :
+                                summerApp?.status || 'N/A'}
                         </span>
                       </div>
                     )}
@@ -358,15 +358,15 @@ const Internship1Dashboard = () => {
                     <>
                       <p className="text-xs font-semibold text-neutral-800">
                         {summerAppApproved ? 'Application Approved' :
-                         summerApp?.status === 'needs_info' ? 'Update Required' :
-                         summerApp?.status === 'submitted' ? 'Application Submitted' :
-                         'No Application'}
+                          summerApp?.status === 'needs_info' ? 'Update Required' :
+                            summerApp?.status === 'submitted' ? 'Application Submitted' :
+                              'No Application'}
                       </p>
                       <p className="text-[11px] text-neutral-600 mt-1">
                         {summerAppApproved ? `${internshipLabel} project not required` :
-                         summerApp?.status === 'needs_info' ? 'Review admin remarks and update' :
-                         summerApp?.status === 'submitted' ? 'Waiting for admin review' :
-                         'Submit your summer internship evidence'}
+                          summerApp?.status === 'needs_info' ? 'Review admin remarks and update' :
+                            summerApp?.status === 'submitted' ? 'Waiting for admin review' :
+                              'Submit your summer internship evidence'}
                       </p>
                     </>
                   ) : selectedPath === 'project' ? (
@@ -375,8 +375,8 @@ const Internship1Dashboard = () => {
                         {hasActiveProject ? 'Project Registered' : 'Not Registered'}
                       </p>
                       <p className="text-[11px] text-neutral-600 mt-1">
-                        {hasActiveProject 
-                          ? (internship1Project?.faculty ? 'Faculty allocated' : 'Waiting for faculty allocation')
+                        {hasActiveProject
+                          ? (internship1Project?.faculty ? 'Faculty allocated' : 'Allocation pending — faculty are reviewing your group.')
                           : 'Register your solo project'}
                       </p>
                     </>
@@ -397,38 +397,38 @@ const Internship1Dashboard = () => {
             {/* Center Column - Main Content */}
             <div className="lg:col-span-7 bg-surface-50 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 lg:p-6 space-y-4 pb-6">
-                
+
                 {/* Track Change Notification - Switched from Summer to Project */}
-                {summerApp && (summerApp.status === 'verified_fail' || summerApp.status === 'absent') && 
-                 summerApp.adminRemarks && summerApp.adminRemarks.includes('Switched to Internship-I under Institute Faculty') && hasActiveProject && (
-                  <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <FiAlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-amber-900 mb-1">
-                          Your {internshipLabel} track has been changed by admin
-                        </h3>
-                        <p className="text-xs text-amber-800 mb-2">
-                          Your track has been changed from <strong>Summer Internship Application</strong> to <strong>{internshipLabel} Project (Institute Faculty)</strong>.
-                        </p>
-                        {summerApp.adminRemarks && (
-                          <p className="text-xs text-amber-700">
-                            <strong>Admin Remarks:</strong> {summerApp.adminRemarks}
+                {summerApp && (summerApp.status === 'verified_fail' || summerApp.status === 'absent') &&
+                  summerApp.adminRemarks && summerApp.adminRemarks.includes('Switched to Internship-I under Institute Faculty') && hasActiveProject && (
+                    <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <FiAlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-amber-900 mb-1">
+                            Your {internshipLabel} track has been changed by admin
+                          </h3>
+                          <p className="text-xs text-amber-800 mb-2">
+                            Your track has been changed from <strong>Summer Internship Application</strong> to <strong>{internshipLabel} Project (Institute Faculty)</strong>.
                           </p>
-                        )}
-                        <p className="text-xs text-amber-800 mt-2 font-medium">
-                          You have successfully registered for {internshipLabel} project. {internship1Project?.faculty ? 'Your faculty supervisor has been allocated.' : 'Waiting for faculty supervisor allocation.'}
-                        </p>
+                          {summerApp.adminRemarks && (
+                            <p className="text-xs text-amber-700">
+                              <strong>Admin Remarks:</strong> {summerApp.adminRemarks}
+                            </p>
+                          )}
+                          <p className="text-xs text-amber-800 mt-2 font-medium">
+                            You have successfully registered for {internshipLabel} project. {internship1Project?.faculty ? 'Your faculty supervisor has been allocated.' : 'Allocation pending — faculty are reviewing your group.'}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Path Selection Cards (When No Path Selected) */}
                 {!selectedPath && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Option 1: Completed Summer Internship */}
-                    <div 
+                    <div
                       onClick={() => navigate(isSem8 ? '/student/sem8/internship/apply/summer' : '/student/sem7/internship/apply/summer')}
                       className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 cursor-pointer transition-all shadow-sm hover:shadow-md p-5"
                     >
@@ -449,9 +449,9 @@ const Internship1Dashboard = () => {
 
                     {/* Option 2: Not Completed - Register Internship 1 Project */}
                     {!hasSummerApp && (
-                      <div 
-                        onClick={() => navigate(isInternship2Route 
-                          ? '/student/sem8/internship2/register' 
+                      <div
+                        onClick={() => navigate(isInternship2Route
+                          ? '/student/sem8/internship2/register'
                           : (isSem8 ? '/student/sem8/internship1/register' : '/student/sem7/internship1/register'))}
                         className="bg-white rounded-xl border-2 border-orange-200 hover:border-orange-400 cursor-pointer transition-all shadow-sm hover:shadow-md p-5"
                       >
@@ -494,20 +494,20 @@ const Internship1Dashboard = () => {
                         <StatusBadge
                           status={
                             summerApp.status === 'verified_pass' ? 'success' :
-                            summerApp.status === 'verified_fail' || summerApp.status === 'absent' ? 'error' :
-                            summerApp.status === 'needs_info' ? 'error' :
-                            summerApp.status === 'pending_verification' ? 'info' :
-                            summerApp.status === 'submitted' ? 'info' :
-                            'warning'
+                              summerApp.status === 'verified_fail' || summerApp.status === 'absent' ? 'error' :
+                                summerApp.status === 'needs_info' ? 'error' :
+                                  summerApp.status === 'pending_verification' ? 'info' :
+                                    summerApp.status === 'submitted' ? 'info' :
+                                      'warning'
                           }
                           text={
                             summerApp.status === 'verified_pass' ? 'Verified (Pass)' :
-                            summerApp.status === 'verified_fail' ? 'Verified (Fail)' :
-                            summerApp.status === 'absent' ? 'Absent' :
-                            summerApp.status === 'needs_info' ? 'Update Required' :
-                            summerApp.status === 'pending_verification' ? 'Pending Verification' :
-                            summerApp.status === 'submitted' ? 'Submitted' :
-                            summerApp.status
+                              summerApp.status === 'verified_fail' ? 'Verified (Fail)' :
+                                summerApp.status === 'absent' ? 'Absent' :
+                                  summerApp.status === 'needs_info' ? 'Update Required' :
+                                    summerApp.status === 'pending_verification' ? 'Pending Verification' :
+                                      summerApp.status === 'submitted' ? 'Submitted' :
+                                        summerApp.status
                           }
                         />
                       </div>
@@ -515,32 +515,32 @@ const Internship1Dashboard = () => {
 
                     <div className="p-5 space-y-5">
                       {/* URGENT: Application has placeholder values */}
-                      {summerApp.status === 'submitted' && 
-                       (summerApp.adminRemarks === 'Assigned by admin' || summerApp.adminRemarks?.includes('Assigned by admin')) &&
-                       (!summerApp.details?.companyName || 
-                        summerApp.details?.companyName === 'To be provided by student' ||
-                        summerApp.details?.companyName === 'N/A - Assigned to Internship 1 Project') && (
-                        <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
-                          <div className="flex items-start gap-3">
-                            <FiAlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <h3 className="text-sm font-bold text-red-900 mb-2">
-                                ⚠️ URGENT: Complete Your Application Immediately
-                              </h3>
-                              <p className="text-xs text-red-800 mb-2">
-                                Your summer internship application contains placeholder information and must be completed immediately.
-                              </p>
-                              <Link
-                                to={isSem8 ? `/student/sem8/internship/apply/summer/${summerApp._id}/edit` : `/student/sem7/internship/apply/summer/${summerApp._id}/edit`}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm mt-2"
-                              >
-                                <FiEdit className="w-4 h-4" />
-                                Fill Application Now
-                              </Link>
+                      {summerApp.status === 'submitted' &&
+                        (summerApp.adminRemarks === 'Assigned by admin' || summerApp.adminRemarks?.includes('Assigned by admin')) &&
+                        (!summerApp.details?.companyName ||
+                          summerApp.details?.companyName === 'To be provided by student' ||
+                          summerApp.details?.companyName === 'N/A - Assigned to Internship 1 Project') && (
+                          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <FiAlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <h3 className="text-sm font-bold text-red-900 mb-2">
+                                  ⚠️ URGENT: Complete Your Application Immediately
+                                </h3>
+                                <p className="text-xs text-red-800 mb-2">
+                                  Your summer internship application contains placeholder information and must be completed immediately.
+                                </p>
+                                <Link
+                                  to={isSem8 ? `/student/sem8/internship/apply/summer/${summerApp._id}/edit` : `/student/sem7/internship/apply/summer/${summerApp._id}/edit`}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors text-sm mt-2"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                  Fill Application Now
+                                </Link>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Status Message */}
                       {summerAppApproved ? (
@@ -587,11 +587,11 @@ const Internship1Dashboard = () => {
                         </div>
                       ) : summerApp.status === 'verified_fail' || summerApp.status === 'absent' ? (
                         (() => {
-                          const isFreshProjectAssignment = summerApp.adminRemarks === 'Assigned by admin' || 
-                            (summerApp.adminRemarks && summerApp.adminRemarks.includes('Assigned by admin') && 
-                             !summerApp.adminRemarks.includes('Switched'));
+                          const isFreshProjectAssignment = summerApp.adminRemarks === 'Assigned by admin' ||
+                            (summerApp.adminRemarks && summerApp.adminRemarks.includes('Assigned by admin') &&
+                              !summerApp.adminRemarks.includes('Switched'));
                           const isTrackChange = summerApp.adminRemarks && summerApp.adminRemarks.includes('Switched to Internship-I under Institute Faculty');
-                          
+
                           if (isFreshProjectAssignment) {
                             return (
                               <div className="bg-info-50 border border-info-200 rounded-lg p-4">
@@ -613,54 +613,47 @@ const Internship1Dashboard = () => {
                               </div>
                             );
                           }
-                          
+
                           return (
-                            <div className={`border rounded-lg p-4 ${
-                              isTrackChange
-                                ? 'bg-amber-50 border-amber-200' 
+                            <div className={`border rounded-lg p-4 ${isTrackChange
+                                ? 'bg-amber-50 border-amber-200'
                                 : 'bg-red-50 border-red-200'
-                            }`}>
+                              }`}>
                               <div className="flex items-start gap-3">
-                                <FiXCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                                  isTrackChange
-                                    ? 'text-amber-600' 
+                                <FiXCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isTrackChange
+                                    ? 'text-amber-600'
                                     : 'text-red-600'
-                                }`} />
+                                  }`} />
                                 <div className="flex-1">
-                                  <h3 className={`font-semibold mb-1 text-sm ${
-                                    isTrackChange
-                                      ? 'text-amber-900' 
+                                  <h3 className={`font-semibold mb-1 text-sm ${isTrackChange
+                                      ? 'text-amber-900'
                                       : 'text-red-900'
-                                  }`}>
+                                    }`}>
                                     {isTrackChange
                                       ? `Track Changed to ${internshipLabel} Project`
                                       : 'Application Rejected'}
                                   </h3>
-                                  <p className={`text-xs mb-3 ${
-                                    isTrackChange
-                                      ? 'text-amber-800' 
+                                  <p className={`text-xs mb-3 ${isTrackChange
+                                      ? 'text-amber-800'
                                       : 'text-red-800'
-                                  }`}>
+                                    }`}>
                                     {isTrackChange
                                       ? `Your track has been changed to ${internshipLabel} Project. Please register for ${internshipLabel} solo project under a faculty member.`
                                       : `Your summer internship application was rejected by the admin. You must complete an ${internshipLabel} solo project under a faculty member.`}
                                   </p>
                                   {summerApp.adminRemarks && (
-                                    <div className={`mt-3 p-3 border rounded-md ${
-                                      isTrackChange
-                                        ? 'bg-amber-100 border-amber-300' 
+                                    <div className={`mt-3 p-3 border rounded-md ${isTrackChange
+                                        ? 'bg-amber-100 border-amber-300'
                                         : 'bg-red-100 border-red-300'
-                                    }`}>
-                                      <p className={`text-[10px] font-medium mb-1 ${
-                                        isTrackChange
-                                          ? 'text-amber-900' 
+                                      }`}>
+                                      <p className={`text-[10px] font-medium mb-1 ${isTrackChange
+                                          ? 'text-amber-900'
                                           : 'text-red-900'
-                                      }`}>Admin Remarks:</p>
-                                      <p className={`text-xs ${
-                                        isTrackChange
-                                          ? 'text-amber-800' 
+                                        }`}>Admin Remarks:</p>
+                                      <p className={`text-xs ${isTrackChange
+                                          ? 'text-amber-800'
                                           : 'text-red-800'
-                                      }`}>{summerApp.adminRemarks}</p>
+                                        }`}>{summerApp.adminRemarks}</p>
                                     </div>
                                   )}
                                 </div>
@@ -783,7 +776,7 @@ const Internship1Dashboard = () => {
                           <div className="space-y-2">
                             <div>
                               <p className="text-[10px] text-neutral-500 mb-1 uppercase tracking-wide">Completion Certificate Link</p>
-                              <a 
+                              <a
                                 href={summerApp.details.completionCertificateLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -811,8 +804,8 @@ const Internship1Dashboard = () => {
                           <div className="space-y-3">
                             <p className="text-xs font-medium text-neutral-900">Next Steps:</p>
                             <Link
-                              to={isInternship2Route 
-                                ? "/student/sem8/internship2/register" 
+                              to={isInternship2Route
+                                ? "/student/sem8/internship2/register"
                                 : (isSem8 ? "/student/sem8/internship1/register" : "/student/sem7/internship1/register")}
                               className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                             >
@@ -860,8 +853,8 @@ const Internship1Dashboard = () => {
                         </div>
                       ) : (
                         <Link
-                          to={isInternship2Route 
-                            ? "/student/sem8/internship2/register" 
+                          to={isInternship2Route
+                            ? "/student/sem8/internship2/register"
                             : (isSem8 ? "/student/sem8/internship1/register" : "/student/sem7/internship1/register")}
                           className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm shadow-sm"
                         >
@@ -918,9 +911,9 @@ const Internship1Dashboard = () => {
                             Faculty Guide
                           </label>
                           <p className="text-sm text-neutral-800 mt-1">
-                            {formatFacultyName(internship1Project.faculty) || 
-                             formatFacultyName(internship1Project.allocatedFaculty) || 
-                             'Not allocated yet'}
+                            {formatFacultyName(internship1Project.faculty) ||
+                              formatFacultyName(internship1Project.allocatedFaculty) ||
+                              'Not allocated yet'}
                           </p>
                         </div>
                       )}
@@ -929,12 +922,12 @@ const Internship1Dashboard = () => {
                           Status
                         </label>
                         <div className="mt-1">
-                          <StatusBadge 
+                          <StatusBadge
                             status={
                               internship1Project.status === 'active' ? 'success' :
-                              internship1Project.status === 'faculty_allocated' ? 'info' :
-                              internship1Project.status === 'registered' ? 'warning' :
-                              'warning'
+                                internship1Project.status === 'faculty_allocated' ? 'info' :
+                                  internship1Project.status === 'registered' ? 'warning' :
+                                    'warning'
                             }
                             text={internship1Project.status || 'Registered'}
                           />
@@ -944,7 +937,7 @@ const Internship1Dashboard = () => {
                   </div>
                 )}
 
-                {/* Waiting for Faculty Allocation Card */}
+                {/* Allocation Pending Card */}
                 {hasActiveProject && !internship1Project?.faculty && (
                   <div className="bg-success-50 border border-success-200 rounded-xl p-5">
                     <div className="flex items-start gap-3 mb-3">
@@ -960,9 +953,9 @@ const Internship1Dashboard = () => {
                       <div className="flex items-start gap-3">
                         <FiClock className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <h4 className="font-semibold text-neutral-900 mb-1 text-xs">Waiting for Faculty Allocation</h4>
+                          <h4 className="font-semibold text-neutral-900 mb-1 text-xs">Allocation pending — faculty are reviewing your group.</h4>
                           <p className="text-[11px] text-neutral-700">
-                            Faculty members review and choose projects based on your preferences. You'll be notified when a faculty member chooses your project.
+                            Faculty are reviewing your group. Allocation happens after the response deadline.
                           </p>
                         </div>
                       </div>
@@ -1000,8 +993,8 @@ const Internship1Dashboard = () => {
                         You need to register for an {internshipLabel} solo project under an Institute Faculty supervisor.
                       </p>
                       <Link
-                        to={isInternship2Route 
-                          ? "/student/sem8/internship2/register" 
+                        to={isInternship2Route
+                          ? "/student/sem8/internship2/register"
                           : (isSem8 ? "/student/sem8/internship1/register" : "/student/sem7/internship1/register")}
                         className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-md text-sm"
                       >
@@ -1017,7 +1010,7 @@ const Internship1Dashboard = () => {
             {/* Right Sidebar - Information & Tips */}
             <div className="lg:col-span-3 bg-surface-100 border-l border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4">
-                
+
                 {/* About Internship 1 */}
                 <div className="bg-info-50 rounded-xl p-4 border border-info-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -1057,7 +1050,7 @@ const Internship1Dashboard = () => {
                         2
                       </div>
                       <p className="text-xs text-neutral-700">
-                        {selectedPath === 'summer' 
+                        {selectedPath === 'summer'
                           ? 'Submit evidence and wait for admin review'
                           : 'Register project and submit faculty preferences'}
                       </p>
@@ -1115,7 +1108,7 @@ const Internship1Dashboard = () => {
                     ) : selectedPath === 'project' && hasActiveProject && !internship1Project?.faculty ? (
                       <>
                         <p className="text-xs text-warning-800">• Faculty allocation is based on your preferences</p>
-                        <p className="text-xs text-warning-800">• Faculty members review and choose projects</p>
+                        <p className="text-xs text-warning-800">• Faculty are reviewing your group</p>
                         <p className="text-xs text-warning-800">• You'll be notified when a faculty member chooses your project</p>
                       </>
                     ) : (

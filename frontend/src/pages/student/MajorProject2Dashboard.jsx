@@ -52,13 +52,13 @@ const MajorProject2Dashboard = () => {
         // Allow access - Type 1 students are always on coursework track for Major Project 2
         return;
       }
-      
+
       // Type 2 students: Only allow if track is 'major2'
       if (isType2 && selectedTrack && selectedTrack !== 'major2') {
         navigate('/dashboard/student');
         return;
       }
-      
+
       // If not Type 1 or Type 2, or no track selected, redirect
       if (!isType1 && !isType2) {
         navigate('/dashboard/student');
@@ -70,28 +70,28 @@ const MajorProject2Dashboard = () => {
   // For members, verify they are actually in the group's members array
   const validSem8Group = (() => {
     if (!isType1 || !majorProject2Group) return null;
-    
+
     // Check semester
     if (majorProject2Group.semester !== 8 && majorProject2Group.semester !== '8') {
       return null;
     }
-    
+
     // Verify student is actually a member (important for members who just joined)
     const studentId = roleData?._id;
     if (!studentId) return null;
-    
+
     const isMember = majorProject2Group.members?.some(m => {
       const memberId = m.student?._id || m.student;
       return memberId && memberId.toString() === studentId.toString() && m.isActive !== false;
     });
-    
+
     return isMember ? majorProject2Group : null;
   })();
 
   // Check if user is group leader (Type 1 only)
-  const isGroupLeader = isType1 && validSem8Group && 
-                       (validSem8Group.leader?._id === roleData?._id || 
-                        validSem8Group.leader === roleData?._id);
+  const isGroupLeader = isType1 && validSem8Group &&
+    (validSem8Group.leader?._id === roleData?._id ||
+      validSem8Group.leader === roleData?._id);
 
   // Get current step first
   const currentStep = getNextStep ? getNextStep() : 'create_group';
@@ -144,12 +144,12 @@ const MajorProject2Dashboard = () => {
                 </div>
               </div>
               {majorProject2 && (
-                <StatusBadge 
+                <StatusBadge
                   status={
                     majorProject2.status === 'active' ? 'success' :
-                    majorProject2.status === 'faculty_allocated' ? 'info' :
-                    majorProject2.status === 'registered' ? 'warning' :
-                    'warning'
+                      majorProject2.status === 'faculty_allocated' ? 'info' :
+                        majorProject2.status === 'registered' ? 'warning' :
+                          'warning'
                   }
                   text={majorProject2.status}
                 />
@@ -161,11 +161,11 @@ const MajorProject2Dashboard = () => {
         {/* Main Content - 3 Column Layout */}
         <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-0">
-            
+
             {/* Left Sidebar - Progress & Quick Info */}
             <div className="lg:col-span-2 bg-surface-100 border-r border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4">
-                
+
                 {/* Progress Tracker */}
                 <div className="bg-white rounded-xl p-4 border border-neutral-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
@@ -219,8 +219,8 @@ const MajorProject2Dashboard = () => {
                           <span className="text-xs font-medium text-neutral-800">
                             {validSem8Group ? (
                               validSem8Group.status === 'finalized' ? 'Finalized' :
-                              validSem8Group.status === 'locked' ? 'Allocated' :
-                              'In Progress'
+                                validSem8Group.status === 'locked' ? 'Allocated' :
+                                  'In Progress'
                             ) : 'No Group'}
                           </span>
                         </div>
@@ -292,7 +292,7 @@ const MajorProject2Dashboard = () => {
             {/* Center Column - Main Content */}
             <div className="lg:col-span-7 bg-surface-50 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 lg:p-6 space-y-4 pb-6">
-                
+
                 {/* Type 1: Step 1: Create Group */}
                 {isType1 && !validSem8Group && (
                   <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
@@ -306,7 +306,7 @@ const MajorProject2Dashboard = () => {
                     </div>
                     <div className="p-5">
                       <p className="text-sm text-neutral-700 mb-4 leading-relaxed">
-                        Form a new group for Major Project 2. You can invite other Type 1 students to join your group. 
+                        Form a new group for Major Project 2. You can invite other Type 1 students to join your group.
                         Groups should have {minMembers}-{maxMembers} members.
                       </p>
                       <Link
@@ -321,32 +321,32 @@ const MajorProject2Dashboard = () => {
                 )}
 
                 {/* Type 2: Register Major Project 2 Section (solo project) */}
-                {isType2 && 
-                 selectedTrack === 'major2' && 
-                 !majorProject2 && (
-                  <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <FiFileText className="w-5 h-5 text-white" />
-                        <h2 className="text-lg font-bold text-white">
+                {isType2 &&
+                  selectedTrack === 'major2' &&
+                  !majorProject2 && (
+                    <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
+                      <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <FiFileText className="w-5 h-5 text-white" />
+                          <h2 className="text-lg font-bold text-white">
+                            Register Major Project 2
+                          </h2>
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <p className="text-sm text-neutral-700 mb-4 leading-relaxed">
+                          Register your solo Major Project 2. You will need to provide project details and submit faculty preferences.
+                        </p>
+                        <Link
+                          to="/student/sem8/major2/register"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
+                        >
+                          <FiFileText className="w-4 h-4" />
                           Register Major Project 2
-                        </h2>
+                        </Link>
                       </div>
                     </div>
-                    <div className="p-5">
-                      <p className="text-sm text-neutral-700 mb-4 leading-relaxed">
-                        Register your solo Major Project 2. You will need to provide project details and submit faculty preferences.
-                      </p>
-                      <Link
-                        to="/student/sem8/major2/register"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
-                      >
-                        <FiFileText className="w-4 h-4" />
-                        Register Major Project 2
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Project Dashboard Card */}
                 {majorProject2 && (
@@ -393,9 +393,9 @@ const MajorProject2Dashboard = () => {
                             Faculty Guide
                           </label>
                           <p className="text-sm text-neutral-800 mt-1">
-                            {formatFacultyName(majorProject2.faculty) || 
-                             formatFacultyName(validSem8Group?.allocatedFaculty) || 
-                             'Not allocated yet'}
+                            {formatFacultyName(majorProject2.faculty) ||
+                              formatFacultyName(validSem8Group?.allocatedFaculty) ||
+                              'Not allocated yet'}
                           </p>
                         </div>
                       )}
@@ -404,12 +404,12 @@ const MajorProject2Dashboard = () => {
                           Status
                         </label>
                         <div className="mt-1">
-                          <StatusBadge 
+                          <StatusBadge
                             status={
                               majorProject2.status === 'active' ? 'success' :
-                              majorProject2.status === 'faculty_allocated' ? 'info' :
-                              majorProject2.status === 'registered' ? 'warning' :
-                              'warning'
+                                majorProject2.status === 'faculty_allocated' ? 'info' :
+                                  majorProject2.status === 'registered' ? 'warning' :
+                                    'warning'
                             }
                             text={majorProject2.status}
                           />
@@ -420,66 +420,66 @@ const MajorProject2Dashboard = () => {
                 )}
 
                 {/* Type 1: Register Major Project 2 Section (when group is finalized) */}
-                {isType1 && 
-                 validSem8Group && 
-                 validSem8Group.status === 'finalized' && 
-                 !majorProject2 && 
-                 isGroupLeader && (
-                  <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <FiCheckCircle className="w-5 h-5 text-white" />
-                        <h2 className="text-lg font-bold text-white">
-                          Ready to Register Project
-                        </h2>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-start gap-2">
-                          <FiCheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-semibold text-success-900 mb-1">
-                              Group Finalized Successfully
-                            </p>
-                            <p className="text-xs text-success-700">
-                              Your group is finalized with {memberCount} members. As the group leader, you can now register the project details and submit faculty preferences.
-                            </p>
-                          </div>
+                {isType1 &&
+                  validSem8Group &&
+                  validSem8Group.status === 'finalized' &&
+                  !majorProject2 &&
+                  isGroupLeader && (
+                    <div className="bg-white rounded-xl border border-success-200 shadow-sm overflow-hidden">
+                      <div className="bg-gradient-to-r from-success-500 to-emerald-500 px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <FiCheckCircle className="w-5 h-5 text-white" />
+                          <h2 className="text-lg font-bold text-white">
+                            Ready to Register Project
+                          </h2>
                         </div>
                       </div>
-                      <Link
-                        to="/student/sem8/major2/register"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
-                      >
-                        <FiFileText className="w-4 h-4" />
-                        Register Major Project 2
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* Type 1: Waiting for Leader */}
-                {isType1 && 
-                 validSem8Group && 
-                 validSem8Group.status === 'finalized' && 
-                 !majorProject2 && 
-                 !isGroupLeader && (
-                  <div className="bg-info-50 border border-info-200 rounded-xl p-5">
-                    <div className="flex items-start gap-3">
-                      <FiInfo className="w-5 h-5 text-info-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h3 className="text-sm font-semibold text-info-900 mb-1">
-                          Waiting for Group Leader
-                        </h3>
-                        <p className="text-xs text-info-700 leading-relaxed">
-                          Your group is finalized. Please wait for the group leader to register Major Project 2. 
-                          You'll be notified once the project is registered.
-                        </p>
+                      <div className="p-5">
+                        <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-start gap-2">
+                            <FiCheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-semibold text-success-900 mb-1">
+                                Group Finalized Successfully
+                              </p>
+                              <p className="text-xs text-success-700">
+                                Your group is finalized with {memberCount} members. As the group leader, you can now register the project details and submit faculty preferences.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Link
+                          to="/student/sem8/major2/register"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors font-medium text-sm shadow-sm"
+                        >
+                          <FiFileText className="w-4 h-4" />
+                          Register Major Project 2
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                {/* Type 1: Waiting for Leader */}
+                {isType1 &&
+                  validSem8Group &&
+                  validSem8Group.status === 'finalized' &&
+                  !majorProject2 &&
+                  !isGroupLeader && (
+                    <div className="bg-info-50 border border-info-200 rounded-xl p-5">
+                      <div className="flex items-start gap-3">
+                        <FiInfo className="w-5 h-5 text-info-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="text-sm font-semibold text-info-900 mb-1">
+                            Waiting for Group Leader
+                          </h3>
+                          <p className="text-xs text-info-700 leading-relaxed">
+                            Your group is finalized. Please wait for the group leader to register Major Project 2.
+                            You'll be notified once the project is registered.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Type 1: Group Dashboard Card */}
                 {isType1 && validSem8Group && validSem8Group._id && (
@@ -506,18 +506,18 @@ const MajorProject2Dashboard = () => {
                           Status
                         </label>
                         <div className="mt-1">
-                          <StatusBadge 
+                          <StatusBadge
                             status={
                               validSem8Group.status === 'finalized' ? 'success' :
-                              validSem8Group.status === 'locked' ? 'success' :
-                              validSem8Group.status === 'open' ? 'info' :
-                              validSem8Group.status === 'invitations_sent' ? 'warning' :
-                              'warning'
+                                validSem8Group.status === 'locked' ? 'success' :
+                                  validSem8Group.status === 'open' ? 'info' :
+                                    validSem8Group.status === 'invitations_sent' ? 'warning' :
+                                      'warning'
                             }
                             text={
                               validSem8Group.status === 'locked' ? 'Allocated' :
-                              validSem8Group.status === 'finalized' ? 'Finalized' :
-                              validSem8Group.status || 'Unknown'
+                                validSem8Group.status === 'finalized' ? 'Finalized' :
+                                  validSem8Group.status || 'Unknown'
                             }
                           />
                         </div>
@@ -535,7 +535,7 @@ const MajorProject2Dashboard = () => {
                           )}
                         </p>
                       </div>
-                      
+
                       {/* Open Group Dashboard Button - Moved here for better visibility */}
                       <div className="pt-2">
                         <Link
@@ -547,19 +547,19 @@ const MajorProject2Dashboard = () => {
                         </Link>
                       </div>
 
-                      {validSem8Group.status && 
-                       validSem8Group.status !== 'finalized' && 
-                       validSem8Group.status !== 'locked' &&
-                       !majorProject2 && (
-                        <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
-                          <div className="flex items-start gap-2">
-                            <FiAlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-warning-800">
-                              <strong>Action Required:</strong> Please finalize your group before registering the project.
-                            </p>
+                      {validSem8Group.status &&
+                        validSem8Group.status !== 'finalized' &&
+                        validSem8Group.status !== 'locked' &&
+                        !majorProject2 && (
+                          <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
+                            <div className="flex items-start gap-2">
+                              <FiAlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5" />
+                              <p className="text-xs text-warning-800">
+                                <strong>Action Required:</strong> Please finalize your group before registering the project.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                       {validSem8Group.status === 'locked' && (
                         <div className="bg-success-50 border border-success-200 rounded-lg p-3">
                           <div className="flex items-start gap-2">
@@ -579,7 +579,7 @@ const MajorProject2Dashboard = () => {
             {/* Right Sidebar - Info & Tips */}
             <div className="lg:col-span-3 bg-surface-100 border-l border-neutral-200 overflow-y-auto custom-scrollbar min-h-0 h-full">
               <div className="p-4 space-y-4 pb-6">
-                
+
                 {/* About Major Project 2 */}
                 <div className="bg-white rounded-xl p-4 border border-neutral-200 shadow-sm">
                   <div className="flex items-center gap-2 mb-3">
@@ -592,7 +592,7 @@ const MajorProject2Dashboard = () => {
                     {isType1 ? (
                       <>
                         <p>
-                          Major Project 2 is a group-based project for Semester 8 Type 1 students. 
+                          Major Project 2 is a group-based project for Semester 8 Type 1 students.
                           You'll work with a team of {minMembers}-{maxMembers} members under faculty guidance.
                         </p>
                         <p>
@@ -602,7 +602,7 @@ const MajorProject2Dashboard = () => {
                     ) : (
                       <>
                         <p>
-                          Major Project 2 is a solo project for Semester 8 Type 2 students. 
+                          Major Project 2 is a solo project for Semester 8 Type 2 students.
                           You'll work independently under faculty guidance.
                         </p>
                         <p>
@@ -723,21 +723,21 @@ const MajorProject2Dashboard = () => {
                       <>
                         <p>• Group leader should register the project as soon as possible</p>
                         <p>• Submit faculty preferences during registration</p>
-                        <p>• Faculty members review and choose projects based on your preferences</p>
+                        <p>• Faculty are reviewing your group. Allocation happens after the response deadline.</p>
                       </>
                     )}
                     {isType2 && !majorProject2 && (
                       <>
                         <p>• Prepare a clear project proposal before registration</p>
                         <p>• Submit faculty preferences during registration</p>
-                        <p>• Faculty members review and choose projects based on your preferences</p>
+                        <p>• Faculty are reviewing your group. Allocation happens after the response deadline.</p>
                       </>
                     )}
                     {majorProject2 && !majorProject2.faculty && !validSem8Group?.allocatedFaculty && (
                       <>
-                        <p>• Faculty members are reviewing projects based on preferences</p>
+                        <p>• Faculty are reviewing your group preferences.</p>
                         <p>• Check back regularly for updates</p>
-                        <p>• You'll be notified when a faculty member chooses your project</p>
+                        <p>• You will be notified once a faculty member is allocated after the response deadline.</p>
                       </>
                     )}
                     {majorProject2 && (majorProject2.faculty || validSem8Group?.allocatedFaculty) && (
