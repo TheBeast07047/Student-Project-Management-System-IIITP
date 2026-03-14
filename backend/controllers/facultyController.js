@@ -207,7 +207,7 @@ const passMTechSem3Project = async (req, res) => {
     }
 
     const nextIndex = project.currentFacultyIndex || (currentIndex + 1);
-    
+
     if (nextIndex >= sortedPrefs.length) {
       project.status = 'pending_admin_allocation';
       await project.save();
@@ -255,7 +255,7 @@ const passMTechSem3Project = async (req, res) => {
 const getDashboardData = async (req, res) => {
   try {
     const facultyId = req.user.id;
-    
+
     // Get faculty details
     const faculty = await Faculty.findOne({ user: facultyId })
       .populate('user', 'email role isActive lastLogin');
@@ -268,32 +268,32 @@ const getDashboardData = async (req, res) => {
     }
 
     // Get faculty's assigned projects
-    const assignedProjects = await Project.find({ 
+    const assignedProjects = await Project.find({
       faculty: faculty._id,
       status: { $in: ['faculty_allocated', 'active', 'completed'] }
     })
-    .populate('student', 'fullName misNumber collegeEmail semester degree branch')
-    .populate('group', 'name members')
-    .sort({ createdAt: -1 });
+      .populate('student', 'fullName misNumber collegeEmail semester degree branch')
+      .populate('group', 'name members')
+      .sort({ createdAt: -1 });
 
     // Get faculty's assigned groups
-    const assignedGroups = await Group.find({ 
+    const assignedGroups = await Group.find({
       allocatedFaculty: faculty._id,
       isActive: true
     })
-    .populate('members.student', 'fullName misNumber collegeEmail')
-    .populate('project', 'title description projectType status')
-    .sort({ createdAt: -1 });
+      .populate('members.student', 'fullName misNumber collegeEmail')
+      .populate('project', 'title description projectType status')
+      .sort({ createdAt: -1 });
 
     // Get pending allocation requests
     const pendingAllocations = await FacultyPreference.find({
       'preferences.faculty': faculty._id,
       status: 'pending'
     })
-    .populate('student', 'fullName misNumber collegeEmail semester degree branch')
-    .populate('project', 'title description projectType')
-    .populate('group', 'name members')
-    .sort({ createdAt: 1 });
+      .populate('student', 'fullName misNumber collegeEmail semester degree branch')
+      .populate('project', 'title description projectType')
+      .populate('group', 'name members')
+      .sort({ createdAt: 1 });
 
     // Get faculty statistics
     const stats = {
@@ -302,7 +302,9 @@ const getDashboardData = async (req, res) => {
       completedProjects: assignedProjects.filter(p => p.status === 'completed').length,
       totalGroups: assignedGroups.length,
       pendingAllocations: pendingAllocations.length,
-      totalStudents: [...new Set(assignedProjects.map(p => p.student._id.toString()))].length
+      totalStudents: [...new Set(assignedProjects
+        .filter(p => p.student && p.student._id)
+        .map(p => p.student._id.toString()))].length
     };
 
     res.json({
@@ -330,7 +332,7 @@ const getFacultyStudents = async (req, res) => {
   try {
     const facultyId = req.user.id;
     const { semester, status } = req.query;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -368,7 +370,7 @@ const getFacultyStudents = async (req, res) => {
     }));
 
     // Remove duplicates
-    const uniqueStudents = students.filter((student, index, self) => 
+    const uniqueStudents = students.filter((student, index, self) =>
       index === self.findIndex(s => s._id.toString() === student._id.toString())
     );
 
@@ -392,7 +394,7 @@ const getFacultyProjects = async (req, res) => {
   try {
     const facultyId = req.user.id;
     const { semester, status, projectType } = req.query;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -404,15 +406,15 @@ const getFacultyProjects = async (req, res) => {
 
     // Build query
     const query = { faculty: faculty._id };
-    
+
     if (semester) {
       query.semester = parseInt(semester);
     }
-    
+
     if (status) {
       query.status = status;
     }
-    
+
     if (projectType) {
       query.projectType = projectType;
     }
@@ -454,7 +456,7 @@ const getFacultyGroups = async (req, res) => {
   try {
     const facultyId = req.user.id;
     const { semester, status } = req.query;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -465,16 +467,16 @@ const getFacultyGroups = async (req, res) => {
     }
 
     // Build query
-    const query = { 
-      allocatedFaculty: faculty._id, 
+    const query = {
+      allocatedFaculty: faculty._id,
       isActive: true,
       status: { $ne: 'locked' } // Exclude locked groups (historical Sem 5 groups)
     };
-    
+
     if (semester) {
       query.semester = parseInt(semester);
     }
-    
+
     if (status) {
       query.status = status;
     }
@@ -517,7 +519,7 @@ const getAllocationRequests = async (req, res) => {
   try {
     const facultyId = req.user.id;
     const { status } = req.query;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -529,7 +531,7 @@ const getAllocationRequests = async (req, res) => {
 
     // Build query
     const query = { 'preferences.faculty': faculty._id };
-    
+
     if (status) {
       query.status = status;
     }
@@ -563,7 +565,7 @@ const acceptAllocation = async (req, res) => {
     const facultyId = req.user.id;
     const { requestId } = req.params;
     const { comments } = req.body;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -583,10 +585,10 @@ const acceptAllocation = async (req, res) => {
     }
 
     // Check if faculty is in the preferences
-    const facultyPreference = request.preferences.find(p => 
+    const facultyPreference = request.preferences.find(p =>
       p.faculty.toString() === faculty._id.toString()
     );
-    
+
     if (!facultyPreference) {
       return res.status(400).json({
         success: false,
@@ -636,7 +638,7 @@ const rejectAllocation = async (req, res) => {
     const facultyId = req.user.id;
     const { requestId } = req.params;
     const { reason, comments } = req.body;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -695,7 +697,7 @@ const rejectAllocation = async (req, res) => {
           // Use the Project's facultyPass method which updates the Project's currentFacultyIndex
           await project.facultyPass(faculty._id, comments || reason || '');
           projectUpdated = true;
-          
+
           // Present to next faculty if available
           if (!project.allFacultyPresented()) {
             try {
@@ -712,7 +714,7 @@ const rejectAllocation = async (req, res) => {
             project.currentFacultyIndex = currentIndex + 1;
             await project.save();
             projectUpdated = true;
-            
+
             // Present to next faculty if available
             if (!project.allFacultyPresented()) {
               try {
@@ -785,7 +787,7 @@ const updateProject = async (req, res) => {
     const facultyId = req.user.id;
     const { projectId } = req.params;
     const { status, grade, feedback } = req.body;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -796,9 +798,9 @@ const updateProject = async (req, res) => {
     }
 
     // Find project
-    const project = await Project.findOne({ 
-      _id: projectId, 
-      faculty: faculty._id 
+    const project = await Project.findOne({
+      _id: projectId,
+      faculty: faculty._id
     });
 
     if (!project) {
@@ -812,7 +814,7 @@ const updateProject = async (req, res) => {
     if (status) project.status = status;
     if (grade) project.grade = grade;
     if (feedback) project.feedback = feedback;
-    
+
     if (status === 'completed' || grade) {
       project.evaluatedBy = faculty._id;
       project.evaluatedAt = new Date();
@@ -841,7 +843,7 @@ const evaluateProject = async (req, res) => {
     const facultyId = req.user.id;
     const { projectId } = req.params;
     const { grade, feedback } = req.body;
-    
+
     // Get faculty
     const faculty = await Faculty.findOne({ user: facultyId });
     if (!faculty) {
@@ -852,9 +854,9 @@ const evaluateProject = async (req, res) => {
     }
 
     // Find project
-    const project = await Project.findOne({ 
-      _id: projectId, 
-      faculty: faculty._id 
+    const project = await Project.findOne({
+      _id: projectId,
+      faculty: faculty._id
     });
 
     if (!project) {
@@ -900,9 +902,9 @@ const getCurrentAcademicYear = async () => {
   const month = now.getMonth(); // 0-11
   // Academic year starts in July (month 6)
   if (month >= 6) {
-    return `${currentYear}-${(currentYear+1).toString().slice(-2)}`;
+    return `${currentYear}-${(currentYear + 1).toString().slice(-2)}`;
   } else {
-    return `${(currentYear-1)}-${currentYear.toString().slice(-2)}`;
+    return `${(currentYear - 1)}-${currentYear.toString().slice(-2)}`;
   }
 };
 
@@ -922,10 +924,10 @@ const getUnallocatedGroups = async (req, res) => {
 
     // If semester specified, use it; otherwise include active semesters for B.Tech and M.Tech (1,4-8)
     const semestersToFetch = semester ? [parseInt(semester)] : [1, 4, 5, 6, 7, 8];
-    
+
     // Get groups currently presented to this faculty across all semesters
     console.log(`[getUnallocatedGroups] Fetching for faculty ${faculty._id}, semesters: ${semestersToFetch.join(', ')}, academicYear: ${academicYear}`);
-    
+
     // First, find all unique academic years for pending preferences for this faculty
     const debugQuery = {
       'preferences.faculty': faculty._id,
@@ -934,20 +936,20 @@ const getUnallocatedGroups = async (req, res) => {
     };
     const debugPrefs = await FacultyPreference.find(debugQuery).select('academicYear').lean();
     const uniqueAcademicYears = [...new Set(debugPrefs.map(p => p.academicYear).filter(Boolean))];
-    
+
     // Use unique academic years found, or fall back to the requested/default academicYear
     const academicYearsToCheck = uniqueAcademicYears.length > 0 ? uniqueAcademicYears : [academicYear];
-    
+
     console.log(`[getUnallocatedGroups] Found academic years in FacultyPreference documents: ${uniqueAcademicYears.join(', ') || 'none'}`);
     console.log(`[getUnallocatedGroups] Will query with academicYears: ${academicYearsToCheck.join(', ')}`);
-    
+
     const allPreferences = [];
     // Query for all academicYears found in FacultyPreference documents (or the requested one)
     for (const acadYear of academicYearsToCheck) {
       for (const sem of semestersToFetch) {
         const preferences = await FacultyPreference.getGroupsForFaculty(
-          faculty._id, 
-          sem, 
+          faculty._id,
+          sem,
           acadYear
         );
         console.log(`[getUnallocatedGroups] Semester ${sem}, AcademicYear ${acadYear}: Found ${preferences.length} preferences after filtering`);
@@ -973,43 +975,43 @@ const getUnallocatedGroups = async (req, res) => {
     const groups = activePreferences.map(pref => {
       // Handle solo projects: internship1 (Sem 7 or Sem 8 Type 1) or major2 without group (Sem 8 Type 2)
       // Group projects: major2 with group (Sem 8 Type 1) or other group-based projects
-      const isSoloProject = pref.project?.projectType === 'internship1' || 
-                           (pref.project?.projectType === 'major2' && !pref.group) ||
-                           !pref.group;
+      const isSoloProject = pref.project?.projectType === 'internship1' ||
+        (pref.project?.projectType === 'major2' && !pref.group) ||
+        !pref.group;
       const student = pref.student;
-      
+
       // Determine project type label with solo/group distinction for Major Project 2
       const projectType = pref.project?.projectType || (pref.semester === 7 ? 'major1' : pref.semester === 8 ? 'major2' : pref.semester === 5 ? 'minor2' : pref.semester === 4 ? 'minor1' : pref.semester === 6 ? 'minor3' : 'unknown');
       const isMajor2Solo = projectType === 'major2' && isSoloProject;
       const isMajor2Group = projectType === 'major2' && !isSoloProject;
-      
+
       return {
-      id: pref._id,
-        groupName: isSoloProject 
+        id: pref._id,
+        groupName: isSoloProject
           ? (student?.fullName ? `${student.fullName}'s Project` : 'Solo Project')
           : (pref.group?.name || 'Unnamed Group'),
-      projectTitle: pref.project?.title || 'No Project',
-      projectType: projectType,
-      isSoloProject: isSoloProject,
-      isMajor2Solo: isMajor2Solo,
-      isMajor2Group: isMajor2Group,
-        members: isSoloProject 
+        projectTitle: pref.project?.title || 'No Project',
+        projectType: projectType,
+        isSoloProject: isSoloProject,
+        isMajor2Solo: isMajor2Solo,
+        isMajor2Group: isMajor2Group,
+        members: isSoloProject
           ? (student ? [{
-              name: student.fullName || 'Unknown',
-              misNumber: student.misNumber || 'N/A',
-              role: 'leader'
-            }] : [])
+            name: student.fullName || 'Unknown',
+            misNumber: student.misNumber || 'N/A',
+            role: 'leader'
+          }] : [])
           : (pref.group?.members?.filter(m => m.isActive !== false).map(member => ({
-        name: member.student?.fullName || 'Unknown',
-        misNumber: member.student?.misNumber || 'N/A',
-        role: member.role || 'member'
-            })) || []),
-      preferences: pref.preferences?.map(p => p.faculty?.fullName || 'Unknown Faculty') || [],
+            name: member.student?.fullName || 'Unknown',
+            misNumber: member.student?.misNumber || 'N/A',
+            role: member.role || 'member'
+          })) || []),
+        preferences: pref.preferences?.map(p => p.faculty?.fullName || 'Unknown Faculty') || [],
         currentPreference: (pref.project?.currentFacultyIndex || 0) + 1,
-      semester: pref.semester,
-      academicYear: pref.academicYear,
-      projectId: pref.project?._id,
-      groupId: pref.group?._id
+        semester: pref.semester,
+        academicYear: pref.academicYear,
+        projectId: pref.project?._id,
+        groupId: pref.group?._id
       };
     });
 
@@ -1040,7 +1042,7 @@ const getAllocatedGroups = async (req, res) => {
 
     // If semester specified, use it; otherwise include active semesters for B.Tech and M.Tech (1,4-8)
     const semestersToFetch = semester ? [parseInt(semester)] : [1, 4, 5, 6, 7, 8];
-    
+
     // Find all unique academic years for allocated preferences for this faculty
     const allocatedQuery = {
       allocatedFaculty: faculty._id,
@@ -1050,14 +1052,14 @@ const getAllocatedGroups = async (req, res) => {
     const allocatedPrefs = await FacultyPreference.find(allocatedQuery).select('academicYear').lean();
     const uniqueAcademicYears = [...new Set(allocatedPrefs.map(p => p.academicYear).filter(Boolean))];
     const academicYearsToCheck = uniqueAcademicYears.length > 0 ? uniqueAcademicYears : [academicYear];
-    
+
     // Method 1: Get groups from FacultyPreference records (for Sem 4-5)
     const allPreferences = [];
     for (const acadYear of academicYearsToCheck) {
       for (const sem of semestersToFetch) {
         const preferences = await FacultyPreference.getAllocatedGroupsForFaculty(
-          faculty._id, 
-          sem, 
+          faculty._id,
+          sem,
           acadYear
         );
         allPreferences.push(...preferences);
@@ -1086,7 +1088,7 @@ const getAllocatedGroups = async (req, res) => {
       academicYear: { $in: academicYearsToCheck },
       status: { $ne: 'locked' } // Exclude locked groups (historical Sem 5 groups)
     };
-    
+
     const directlyAllocatedGroups = await Group.find(groupQuery)
       .populate('members.student', 'fullName misNumber collegeEmail branch')
       .populate('project', 'title description projectType status _id')
@@ -1101,43 +1103,43 @@ const getAllocatedGroups = async (req, res) => {
     const groupsFromPreferences = activePreferences.map(pref => {
       // Handle solo projects: internship1 (Sem 7 or Sem 8 Type 1), internship2 (Sem 8), or major2 without group (Sem 8 Type 2)
       // Group projects: major2 with group (Sem 8 Type 1) or other group-based projects
-      const isSoloProject = pref.project?.projectType === 'internship1' || 
-                           pref.project?.projectType === 'internship2' ||
-                           (pref.project?.projectType === 'major2' && !pref.group) ||
-                           !pref.group;
+      const isSoloProject = pref.project?.projectType === 'internship1' ||
+        pref.project?.projectType === 'internship2' ||
+        (pref.project?.projectType === 'major2' && !pref.group) ||
+        !pref.group;
       const student = pref.student;
-      
+
       // Determine project type label with solo/group distinction for Major Project 2
       const projectType = pref.project?.projectType || (pref.semester === 7 ? 'major1' : pref.semester === 8 ? 'major2' : pref.semester === 5 ? 'minor2' : pref.semester === 4 ? 'minor1' : pref.semester === 6 ? 'minor3' : 'unknown');
       const isMajor2Solo = projectType === 'major2' && isSoloProject;
       const isMajor2Group = projectType === 'major2' && !isSoloProject;
-      
+
       return {
-      id: pref._id,
-        groupName: isSoloProject 
+        id: pref._id,
+        groupName: isSoloProject
           ? (student?.fullName ? `${student.fullName}'s Project` : 'Solo Project')
           : (pref.group?.name || 'Unnamed Group'),
-      projectTitle: pref.project?.title || 'No Project',
-      projectType: projectType,
-      isSoloProject: isSoloProject,
-      isMajor2Solo: isMajor2Solo,
-      isMajor2Group: isMajor2Group,
-        members: isSoloProject 
+        projectTitle: pref.project?.title || 'No Project',
+        projectType: projectType,
+        isSoloProject: isSoloProject,
+        isMajor2Solo: isMajor2Solo,
+        isMajor2Group: isMajor2Group,
+        members: isSoloProject
           ? (student ? [{
-              name: student.fullName || 'Unknown',
-              misNumber: student.misNumber || 'N/A',
-              role: 'leader'
-            }] : [])
+            name: student.fullName || 'Unknown',
+            misNumber: student.misNumber || 'N/A',
+            role: 'leader'
+          }] : [])
           : (pref.group?.members?.filter(m => m.isActive !== false).map(member => ({
-        name: member.student?.fullName || 'Unknown',
-        misNumber: member.student?.misNumber || 'N/A',
-        role: member.role || 'member'
-            })) || []),
-      allocatedDate: pref.allocatedAt,
-      semester: pref.semester,
-      academicYear: pref.academicYear,
-      projectId: pref.project?._id,
-      groupId: pref.group?._id
+            name: member.student?.fullName || 'Unknown',
+            misNumber: member.student?.misNumber || 'N/A',
+            role: member.role || 'member'
+          })) || []),
+        allocatedDate: pref.allocatedAt,
+        semester: pref.semester,
+        academicYear: pref.academicYear,
+        projectId: pref.project?._id,
+        groupId: pref.group?._id
       };
     });
 
@@ -1161,7 +1163,7 @@ const getAllocatedGroups = async (req, res) => {
     // Merge and deduplicate by groupId
     const allGroups = [...groupsFromPreferences];
     const existingGroupIds = new Set(groupsFromPreferences.map(g => g.groupId?.toString()));
-    
+
     for (const group of groupsFromDirect) {
       if (!existingGroupIds.has(group.groupId?.toString())) {
         allGroups.push(group);
@@ -1208,7 +1210,7 @@ const chooseGroup = async (req, res) => {
     // For group projects, check the FacultyPreference's currentFacultyIndex
     let currentFaculty = preference.getCurrentFaculty();
     let isValidCurrentFaculty = currentFaculty && currentFaculty.faculty.toString() === faculty._id.toString();
-    
+
     // Also verify against Project's currentFacultyIndex for solo projects
     if (preference.project && !preference.group) {
       const project = await Project.findById(preference.project);
@@ -1221,14 +1223,14 @@ const chooseGroup = async (req, res) => {
         }
       }
     }
-    
+
     if (!isValidCurrentFaculty) {
       return res.status(400).json({ success: false, message: 'This group/project is not currently presented to you' });
     }
 
     // Allocate the group to this faculty
     await preference.allocateFaculty(faculty._id, 'faculty_choice');
-    
+
     // Update the group and project with allocated faculty
     let group = null;
     if (preference.group) {
@@ -1238,7 +1240,7 @@ const chooseGroup = async (req, res) => {
         group.allocatedFaculty = faculty._id;
         group.status = 'locked';
         await group.save();
-        
+
         // Get populated version for member updates below
         group = await Group.findById(preference.group).populate('members.student');
       }
@@ -1255,10 +1257,10 @@ const chooseGroup = async (req, res) => {
             await project.facultyChoose(faculty._id, '');
           } catch (chooseError) {
             // If facultyChoose fails, manually set the faculty
-        project.faculty = faculty._id;
-        project.status = 'faculty_allocated';
-        project.allocatedBy = 'faculty_choice';
-        await project.save();
+            project.faculty = faculty._id;
+            project.status = 'faculty_allocated';
+            project.allocatedBy = 'faculty_choice';
+            await project.save();
           }
         } else {
           // For group projects, manually set the faculty
@@ -1267,14 +1269,14 @@ const chooseGroup = async (req, res) => {
           project.allocatedBy = 'faculty_choice';
           await project.save();
         }
-        
+
         // Update all group members' currentProjects status (for group projects)
         if (group && group.members) {
           const activeMembers = group.members.filter(m => m.isActive);
           for (const member of activeMembers) {
             const memberStudent = await Student.findById(member.student);
             if (memberStudent) {
-              const currentProject = memberStudent.currentProjects.find(cp => 
+              const currentProject = memberStudent.currentProjects.find(cp =>
                 cp.project.toString() === project._id.toString()
               );
               if (currentProject) {
@@ -1287,7 +1289,7 @@ const chooseGroup = async (req, res) => {
           // Handle solo projects (internship1 - Sem 7 or Sem 8 Type 1) - update student's currentProjects directly
           const student = await Student.findById(preference.student);
           if (student) {
-            const currentProject = student.currentProjects.find(cp => 
+            const currentProject = student.currentProjects.find(cp =>
               cp.project.toString() === project._id.toString()
             );
             if (currentProject) {
@@ -1408,7 +1410,7 @@ const passGroup = async (req, res) => {
     // For group projects, check the FacultyPreference's currentFacultyIndex
     let currentFaculty = preference.getCurrentFaculty();
     let isValidCurrentFaculty = currentFaculty && currentFaculty.faculty.toString() === faculty._id.toString();
-    
+
     // Also verify against Project's currentFacultyIndex for solo projects
     // For solo projects, Project's currentFacultyIndex is the source of truth
     if (preference.project && !preference.group) {
@@ -1427,7 +1429,7 @@ const passGroup = async (req, res) => {
         }
       }
     }
-    
+
     if (!isValidCurrentFaculty) {
       return res.status(400).json({ success: false, message: 'This group/project is not currently presented to you' });
     }
@@ -1470,13 +1472,13 @@ const passGroup = async (req, res) => {
           await preference.save();
         } else {
           // Fallback: use moveToNextFaculty
-      await preference.moveToNextFaculty();
+          await preference.moveToNextFaculty();
         }
       } else {
         // For group projects, use FacultyPreference's index as source of truth
         await preference.moveToNextFaculty();
       }
-      
+
       // Get the updated project to check current faculty
       let nextFaculty = preference.getCurrentFaculty();
       if (preference.project) {
@@ -1486,7 +1488,7 @@ const passGroup = async (req, res) => {
           if (projectCurrentFaculty) {
             nextFaculty = projectCurrentFaculty;
           }
-          
+
           // For solo projects, present to next faculty after passing
           // This applies to:
           // - M.Tech Sem 1 minor1 (solo, no group)
@@ -1508,7 +1510,7 @@ const passGroup = async (req, res) => {
           }
         }
       }
-      
+
       res.json({
         success: true,
         message: 'Group passed to next faculty preference',
