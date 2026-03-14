@@ -19,7 +19,8 @@ const ManageFaculty = () => {
     phone: '',
     department: '',
     mode: '',
-    designation: ''
+    designation: '',
+    maxGroupsAllowed: 5
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -41,8 +42,8 @@ const ManageFaculty = () => {
         typeof response.totalCount === 'number'
           ? response.totalCount
           : typeof response.count === 'number'
-          ? response.count
-          : data.length;
+            ? response.count
+            : data.length;
       setTotalCount(total);
       const totalPagesValue =
         typeof response.totalPages === 'number' && response.totalPages > 0
@@ -129,7 +130,8 @@ const ManageFaculty = () => {
       phone: faculty.phone || '',
       department: faculty.department || '',
       mode: faculty.mode || '',
-      designation: faculty.designation || ''
+      designation: faculty.designation || '',
+      maxGroupsAllowed: faculty.maxGroupsAllowed || 5
     });
     setIsEditOpen(true);
   };
@@ -151,7 +153,8 @@ const ManageFaculty = () => {
         department: editForm.department,
         mode: editForm.mode,
         designation: editForm.designation,
-        email: editForm.email
+        email: editForm.email,
+        maxGroupsAllowed: parseInt(editForm.maxGroupsAllowed)
       };
       const response = await facultyAPI.updateFaculty(facultyId, payload);
       setIsEditOpen(false);
@@ -286,11 +289,10 @@ const ManageFaculty = () => {
                 {faculties.map((f) => (
                   <li
                     key={f._id || f.facultyId}
-                    className={`py-2 cursor-pointer ${
-                      selectedFaculty && selectedFaculty.faculty && selectedFaculty.faculty.facultyId === f.facultyId
+                    className={`py-2 cursor-pointer ${selectedFaculty && selectedFaculty.faculty && selectedFaculty.faculty.facultyId === f.facultyId
                         ? 'bg-indigo-50'
                         : ''
-                    }`}
+                      }`}
                     onClick={() => loadFacultyDetails(f.facultyId)}
                   >
                     <div className="flex items-center justify-between">
@@ -419,6 +421,12 @@ const ManageFaculty = () => {
                       <div>
                         <dt className="text-gray-500 text-xs">Faculty ID</dt>
                         <dd className="text-gray-900">{selectedFaculty.faculty.facultyId}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-gray-500 text-xs">Max Groups Allowed</dt>
+                        <dd className="text-gray-900">
+                          {selectedFaculty.groups ? selectedFaculty.groups.length : 0} / {selectedFaculty.faculty.maxGroupsAllowed ?? 5} groups currently supervised
+                        </dd>
                       </div>
                       <div>
                         <dt className="text-gray-500 text-xs">Role</dt>
@@ -574,6 +582,19 @@ const ManageFaculty = () => {
                     <option value="Tenders/Purchase">Tenders/Purchase</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Max Groups Allowed</label>
+                <input
+                  type="number"
+                  name="maxGroupsAllowed"
+                  value={editForm.maxGroupsAllowed}
+                  onChange={handleEditChange}
+                  min="1"
+                  max="20"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum groups this faculty can supervise. Used by the allocation engine.</p>
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button

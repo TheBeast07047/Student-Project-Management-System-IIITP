@@ -11,7 +11,7 @@ const ManageProjects = () => {
   const navigate = useNavigate();
   const semester = parseInt(searchParams.get('semester')) || 5;
   const groupIdFromUrl = searchParams.get('group');
-  
+
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -21,7 +21,7 @@ const ManageProjects = () => {
   const [showDisbandModal, setShowDisbandModal] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [disbandReason, setDisbandReason] = useState('');
-  
+
   // Loading states for actions
   const [addingMember, setAddingMember] = useState(false);
   const [removingMember, setRemovingMember] = useState(false);
@@ -34,13 +34,14 @@ const ManageProjects = () => {
   const [loadingFaculty, setLoadingFaculty] = useState(false);
   const [facultySearchTerm, setFacultySearchTerm] = useState('');
   const [facultySortBy, setFacultySortBy] = useState('name'); // name, department, designation
+  const [capOverrideConfirm, setCapOverrideConfirm] = useState(null); // { facultyId, facultyName, activeGroupCount, maxGroupsAllowed }
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentsLoaded, setStudentsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const searchTimeoutRef = useRef(null);
-  
+
   // Form states
   const [addMemberForm, setAddMemberForm] = useState({
     role: 'member',
@@ -55,12 +56,12 @@ const ManageProjects = () => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
+
     // Set new timeout for debounced search
     searchTimeoutRef.current = setTimeout(() => {
       loadGroups();
     }, searchTerm ? 500 : 0); // No delay for initial load, 500ms debounce for search
-    
+
     // Cleanup on unmount or when dependencies change
     return () => {
       if (searchTimeoutRef.current) {
@@ -90,15 +91,15 @@ const ManageProjects = () => {
   const loadGroups = async () => {
     try {
       setLoading(true);
-      const params = { 
+      const params = {
         semester: semester.toString()
       };
-      
+
       // Add search term if provided
       if (searchTerm && searchTerm.trim()) {
         params.search = searchTerm.trim();
       }
-      
+
       const response = await adminAPI.getGroups(params);
       setGroups(response.data || []);
     } catch (error) {
@@ -125,7 +126,7 @@ const ManageProjects = () => {
     if (!selectedGroup) {
       return;
     }
-    
+
     try {
       setStudentsLoading(true);
       const params = {
@@ -133,7 +134,7 @@ const ManageProjects = () => {
         page: 1,
         limit: 100
       };
-      
+
       const response = await adminAPI.searchStudentsForGroup(selectedGroup._id, params);
       const studentsWithEligibility = response.data || [];
       setStudents(studentsWithEligibility);
@@ -248,14 +249,14 @@ const ManageProjects = () => {
       const response = await adminAPI.disbandGroup(selectedGroup._id, {
         reason: disbandReason || 'Disbanded by admin'
       });
-      
+
       const projectTypeName = getProjectTypeName(selectedGroup.semester);
       let successMessage = `Group "${selectedGroup.name || 'Unnamed Group'}" has been disbanded successfully. All members, projects, and faculty preferences have been removed.`;
-      
+
       if (response.data?.warning) {
         successMessage += ` ${response.data.warning}`;
       }
-      
+
       toast.success(successMessage);
       setShowDisbandModal(false);
       setDisbandReason('');
@@ -283,7 +284,7 @@ const ManageProjects = () => {
       try {
         const fallbackResponse = await adminAPI.getFaculty();
         let faculty = fallbackResponse.data || [];
-        
+
         // Apply client-side filtering if searchFaculties failed
         if (searchTerm) {
           const searchLower = searchTerm.toLowerCase();
@@ -295,7 +296,7 @@ const ManageProjects = () => {
             fac.designation?.toLowerCase().includes(searchLower)
           );
         }
-        
+
         // Apply client-side sorting
         faculty.sort((a, b) => {
           const field = sortBy === 'department' ? 'department' : sortBy === 'designation' ? 'designation' : 'fullName';
@@ -303,7 +304,7 @@ const ManageProjects = () => {
           const bVal = (b[field] || '').toString();
           return aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
         });
-        
+
         setAvailableFaculty(faculty);
       } catch (fallbackError) {
         handleApiError(error);
@@ -343,13 +344,32 @@ const ManageProjects = () => {
     };
   }, [facultySearchTerm, facultySortBy, showAllocateFacultyModal]);
 
-  // Allocate faculty to group
-  const handleAllocateFaculty = async (facultyId) => {
+  // Allocate faculty to group (with cap override check)
+  const handleAllocateFaculty = async (facultyId, forceOverride = false) => {
     if (!selectedGroup || !facultyId) {
       return;
     }
 
+    // Check if faculty is at their cap — show confirmation if not force-overriding
+    if (!forceOverride) {
+      const faculty = availableFaculty.find(f => f._id === facultyId);
+      if (faculty) {
+        const activeCount = faculty.activeGroupCount || 0;
+        const maxAllowed = faculty.maxGroupsAllowed || 5;
+        if (activeCount >= maxAllowed) {
+          setCapOverrideConfirm({
+            facultyId,
+            facultyName: formatFacultyName(faculty),
+            activeGroupCount: activeCount,
+            maxGroupsAllowed: maxAllowed
+          });
+          return; // Don't allocate yet — wait for confirmation
+        }
+      }
+    }
+
     setAllocatingFaculty(true);
+    setCapOverrideConfirm(null);
     try {
       await adminAPI.allocateFacultyToGroup(selectedGroup._id, { facultyId });
       toast.success('Faculty allocated to group successfully');
@@ -397,11 +417,11 @@ const ManageProjects = () => {
 
     setChangingLeader(true);
     try {
-      const newLeader = selectedGroup.members?.find(m => 
+      const newLeader = selectedGroup.members?.find(m =>
         m.isActive && (m.student?._id === newLeaderId || m.student === newLeaderId)
       );
       const newLeaderName = newLeader?.student?.fullName || 'the selected member';
-      
+
       await adminAPI.changeGroupLeader(selectedGroup._id, {
         newLeaderId: newLeaderId,
         reason: ''
@@ -453,12 +473,12 @@ const ManageProjects = () => {
 
       const statusA = getAvailabilityStatus(a);
       const statusB = getAvailabilityStatus(b);
-      
+
       // Sort by availability status (0 first, then 1, then 2)
       if (statusA !== statusB) {
         return statusA - statusB;
       }
-      
+
       // If same status, sort alphabetically by name
       return (a.fullName || '').localeCompare(b.fullName || '');
     });
@@ -491,11 +511,10 @@ const ManageProjects = () => {
             <button
               key={sem}
               onClick={() => navigate(`/admin/manage-projects?semester=${sem}`)}
-              className={`px-4 py-2 rounded-md font-medium ${
-                semester === sem
+              className={`px-4 py-2 rounded-md font-medium ${semester === sem
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                }`}
             >
               Semester {sem}
             </button>
@@ -541,16 +560,15 @@ const ManageProjects = () => {
                     const hasProject = !!group.project;
                     const hasFaculty = !!group.allocatedFaculty;
                     const leader = activeMembers.find(m => m.role === 'leader')?.student || group.leader;
-                    
+
                     return (
                       <div
                         key={group._id}
                         onClick={() => loadGroupDetails(group._id)}
-                        className={`bg-white border rounded-lg shadow-sm hover:shadow transition-all cursor-pointer ${
-                          selectedGroup?._id === group._id 
-                            ? 'border-indigo-500 bg-indigo-50 shadow-md' 
+                        className={`bg-white border rounded-lg shadow-sm hover:shadow transition-all cursor-pointer ${selectedGroup?._id === group._id
+                            ? 'border-indigo-500 bg-indigo-50 shadow-md'
                             : 'border-gray-200 hover:border-indigo-300'
-                        }`}
+                          }`}
                       >
                         <div className="p-3">
                           {/* Compact Header */}
@@ -619,19 +637,17 @@ const ManageProjects = () => {
                                   const student = member.student;
                                   const isLeader = member.role === 'leader';
                                   return (
-                                    <div 
-                                      key={member._id || idx} 
-                                      className={`flex items-center py-1.5 px-2 rounded text-xs ${
-                                        isLeader 
-                                          ? 'bg-yellow-50' 
+                                    <div
+                                      key={member._id || idx}
+                                      className={`flex items-center py-1.5 px-2 rounded text-xs ${isLeader
+                                          ? 'bg-yellow-50'
                                           : 'bg-gray-50'
-                                      }`}
+                                        }`}
                                     >
                                       {/* Name with fixed width */}
                                       <div className="flex items-center gap-1.5 flex-shrink-0" style={{ minWidth: '140px', maxWidth: '180px' }}>
-                                        <span className={`font-medium truncate ${
-                                          isLeader ? 'text-yellow-900' : 'text-gray-900'
-                                        }`} title={student?.fullName || 'Unknown'}>
+                                        <span className={`font-medium truncate ${isLeader ? 'text-yellow-900' : 'text-gray-900'
+                                          }`} title={student?.fullName || 'Unknown'}>
                                           {student?.fullName || 'Unknown'}
                                         </span>
                                         {isLeader && (
@@ -687,9 +703,9 @@ const ManageProjects = () => {
                     <h3 className="font-semibold text-gray-900 mb-2">
                       {selectedGroup.name || `Group ${selectedGroup._id.slice(-6)}`}
                     </h3>
-                      {selectedGroup.description && (
-                        <p className="text-sm text-gray-600">{selectedGroup.description}</p>
-                      )}
+                    {selectedGroup.description && (
+                      <p className="text-sm text-gray-600">{selectedGroup.description}</p>
+                    )}
                     <div className="mt-2 flex items-center gap-2">
                       <StatusBadge status={selectedGroup.status} />
                       <span className="text-sm text-gray-600">
@@ -700,15 +716,15 @@ const ManageProjects = () => {
 
                   {/* Members List */}
                   <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">Members</h4>
-                    <button
-                      onClick={() => setShowAddMemberModal(true)}
-                      className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      + Add Member
-                    </button>
-                  </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">Members</h4>
+                      <button
+                        onClick={() => setShowAddMemberModal(true)}
+                        className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                      >
+                        + Add Member
+                      </button>
+                    </div>
                     <div className="space-y-2">
                       {selectedGroup.members?.filter(m => m.isActive).map(member => (
                         <div
@@ -887,7 +903,7 @@ const ManageProjects = () => {
             <h2 className="text-xl font-semibold mb-4">
               {addStep === 1 ? 'Add Members - Select Students' : 'Add Members - Confirm & Message'}
             </h2>
-            
+
             {addStep === 1 && (
               <div className="space-y-4">
                 <div>
@@ -901,12 +917,12 @@ const ManageProjects = () => {
                     onChange={(e) => {
                       const value = e.target.value;
                       setStudentSearchTerm(value);
-                      
+
                       // Clear previous timeout
                       if (searchTimeoutRef.current) {
                         clearTimeout(searchTimeoutRef.current);
                       }
-                      
+
                       // Debounce search - wait 300ms after user stops typing
                       searchTimeoutRef.current = setTimeout(() => {
                         if (value.trim()) {
@@ -959,13 +975,13 @@ const ManageProjects = () => {
                           const inThisGroup = selectedGroup.members?.some(
                             m => m.isActive && (m.student?._id === student._id || m.student === student._id)
                           );
-                          
+
                           // Use eligibility from backend response, or if already in this group
                           const disabled = !student.isEligible || inThisGroup;
 
                           let statusLabel = 'Available';
                           let statusClass = 'bg-green-100 text-green-800';
-                          
+
                           if (inThisGroup) {
                             statusLabel = 'Already in this group';
                             statusClass = 'bg-gray-100 text-gray-600';
@@ -986,9 +1002,8 @@ const ManageProjects = () => {
                                   setSelectedStudentsForAdd(prev => [...prev, student]);
                                 }
                               }}
-                              className={`w-full text-left px-3 py-2 text-sm border-b border-gray-100 last:border-b-0 transition-colors ${
-                                isSelected ? 'bg-indigo-50' : disabled ? 'bg-gray-50' : 'hover:bg-indigo-50'
-                              } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                              className={`w-full text-left px-3 py-2 text-sm border-b border-gray-100 last:border-b-0 transition-colors ${isSelected ? 'bg-indigo-50' : disabled ? 'bg-gray-50' : 'hover:bg-indigo-50'
+                                } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                               disabled={disabled}
                               title={disabled && student.eligibilityReason ? student.eligibilityReason : ''}
                             >
@@ -1218,7 +1233,7 @@ const ManageProjects = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4 text-red-600">Disband Group</h2>
-            
+
             {/* Warning for Sem 6 */}
             {selectedGroup.semester === 6 && (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -1227,7 +1242,7 @@ const ManageProjects = () => {
                 </p>
               </div>
             )}
-            
+
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to disband this group? This action will:
             </p>
@@ -1238,7 +1253,7 @@ const ManageProjects = () => {
               <li>Clear all invitations</li>
               <li>Delete the group completely</li>
             </ul>
-            
+
             {/* Show member list */}
             {selectedGroup.members && selectedGroup.members.filter(m => m.isActive).length > 0 && (
               <div className="mb-4">
@@ -1262,7 +1277,7 @@ const ManageProjects = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Reason (optional)
@@ -1334,19 +1349,40 @@ const ManageProjects = () => {
                         faculty.designation?.toLowerCase().includes(searchLower)
                       );
                     })
-                    .map(faculty => (
-                      <button
-                        key={faculty._id}
-                        onClick={() => handleAllocateFaculty(faculty._id)}
-                        disabled={allocatingFaculty}
-                        className="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <div className="font-medium text-sm">{formatFacultyName(faculty)}</div>
-                        <div className="text-xs text-gray-500">
-                          {faculty.department} • {faculty.designation}
-                        </div>
-                      </button>
-                    ))}
+                    .map(faculty => {
+                      const activeCount = faculty.activeGroupCount || 0;
+                      const maxAllowed = faculty.maxGroupsAllowed || 5;
+                      const isAtCap = activeCount >= maxAllowed;
+                      return (
+                        <button
+                          key={faculty._id}
+                          onClick={() => handleAllocateFaculty(faculty._id)}
+                          disabled={allocatingFaculty}
+                          className={`w-full text-left p-3 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${isAtCap
+                              ? 'border-red-200 bg-red-50 hover:bg-red-100'
+                              : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">{formatFacultyName(faculty)}</div>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isAtCap
+                                ? 'bg-red-100 text-red-700'
+                                : activeCount >= maxAllowed - 1
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-green-100 text-green-700'
+                              }`}>
+                              {activeCount}/{maxAllowed} groups
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {faculty.department} • {faculty.designation}
+                            {isAtCap && (
+                              <span className="ml-2 text-red-600 font-medium">⚠ At capacity</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   {availableFaculty.filter(faculty => {
                     if (!facultySearchTerm) return true;
                     const searchLower = facultySearchTerm.toLowerCase();
@@ -1356,10 +1392,10 @@ const ManageProjects = () => {
                       faculty.designation?.toLowerCase().includes(searchLower)
                     );
                   }).length === 0 && (
-                    <div className="text-center text-gray-500 py-8 text-sm">
-                      No faculty found
-                    </div>
-                  )}
+                      <div className="text-center text-gray-500 py-8 text-sm">
+                        No faculty found
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -1368,10 +1404,68 @@ const ManageProjects = () => {
                 onClick={() => {
                   setShowAllocateFacultyModal(false);
                   setFacultySearchTerm('');
+                  setCapOverrideConfirm(null);
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cap Override Confirmation Modal */}
+      {capOverrideConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 bg-yellow-50">
+              <h3 className="text-lg font-semibold text-yellow-900 flex items-center">
+                <svg className="w-6 h-6 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Faculty At Capacity
+              </h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700 mb-3">
+                <strong>{capOverrideConfirm.facultyName}</strong> is already supervising{' '}
+                <strong className="text-red-600">{capOverrideConfirm.activeGroupCount}</strong> out of{' '}
+                <strong>{capOverrideConfirm.maxGroupsAllowed}</strong> allowed groups.
+              </p>
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
+                <p className="text-sm text-yellow-800">
+                  Allocating this group will exceed the faculty's configured cap. This action should only be done when no other option is available.
+                </p>
+              </div>
+              <p className="text-sm text-gray-700 font-medium">
+                Do you want to override the cap and proceed?
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+              <button
+                onClick={() => setCapOverrideConfirm(null)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={allocatingFaculty}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAllocateFaculty(capOverrideConfirm.facultyId, true)}
+                disabled={allocatingFaculty}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors flex items-center"
+              >
+                {allocatingFaculty ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Allocating...
+                  </>
+                ) : (
+                  'Override Cap & Allocate'
+                )}
               </button>
             </div>
           </div>

@@ -16,61 +16,84 @@ const SystemConfiguration = () => {
       'sem5.minGroupMembers': 'Minimum Group Members',
       'sem5.maxGroupMembers': 'Maximum Group Members',
       'sem5.minor2.allowedFacultyTypes': 'Allowed Faculty Types',
-      
+      'sem5.allocationDeadline': 'Allocation Deadline',
+
       // Sem 7 Major Project 1
       'sem7.major1.facultyPreferenceLimit': 'Faculty Preference Limit',
       'sem7.major1.minGroupMembers': 'Minimum Group Members',
       'sem7.major1.maxGroupMembers': 'Maximum Group Members',
       'sem7.major1.allowedFacultyTypes': 'Allowed Faculty Types',
-      
+      'sem7.major1.allocationDeadline': 'Allocation Deadline',
+
       // Sem 7 Internship 1
       'sem7.internship1.facultyPreferenceLimit': 'Faculty Preference Limit',
       'sem7.internship1.allowedFacultyTypes': 'Allowed Faculty Types',
-      
+      'sem7.internship1.allocationDeadline': 'Allocation Deadline',
+
       // Sem 8 Major Project 2 (Group)
       'sem8.major2.group.facultyPreferenceLimit': 'Faculty Preference Limit',
       'sem8.major2.group.minGroupMembers': 'Minimum Group Members',
       'sem8.major2.group.maxGroupMembers': 'Maximum Group Members',
       'sem8.major2.group.allowedFacultyTypes': 'Allowed Faculty Types',
-      
+      'sem8.major2.allocationDeadline': 'Allocation Deadline',
+
       // Sem 8 Internship 2
       'sem8.internship2.facultyPreferenceLimit': 'Faculty Preference Limit',
       'sem8.internship2.allowedFacultyTypes': 'Allowed Faculty Types',
-      
+      'sem8.internship2.allocationDeadline': 'Allocation Deadline',
+
       // Sem 8 Major Project 2 (Solo)
       'sem8.major2.solo.facultyPreferenceLimit': 'Faculty Preference Limit',
       'sem8.major2.solo.allowedFacultyTypes': 'Allowed Faculty Types',
+
+      // M.Tech Sem 3
+      'mtech.sem3.allocationDeadline': 'Allocation Deadline',
+
+      // M.Tech Sem 4
+      'mtech.sem4.allocationDeadline': 'Allocation Deadline',
     };
-    
+
     return labelMap[configKey] || configKey;
   };
-  
-  const [activeTab, setActiveTab] = useState('sem5'); // 'sem5', 'sem7', or 'sem8'
+
+  // Helper to format ISO date to YYYY-MM-DDThh:mm for datetime-local
+  const formatDateForInput = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '';
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+
+  const [activeTab, setActiveTab] = useState('sem5'); // 'sem5', 'sem7', 'sem8', or 'mtech'
   const [sem7SubTab, setSem7SubTab] = useState('major1'); // 'major1' or 'internship1' (only active when activeTab === 'sem7')
   const [sem8SubTab, setSem8SubTab] = useState('major2-group'); // 'major2-group', 'internship2', or 'major2-solo' (only active when activeTab === 'sem8')
-  
+  const [mtechSubTab, setMtechSubTab] = useState('sem3'); // 'sem3' or 'sem4' (only active when activeTab === 'mtech')
+
   // Sem 5 configs
   const [configs, setConfigs] = useState([]);
   const [facultyPreferenceLimit, setFacultyPreferenceLimit] = useState(7);
   const [minGroupMembers, setMinGroupMembers] = useState(4);
   const [maxGroupMembers, setMaxGroupMembers] = useState(5);
   const [allowedFacultyTypes, setAllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
+  const [sem5AllocationDeadline, setSem5AllocationDeadline] = useState('');
   const [safeMinimumLimit, setSafeMinimumLimit] = useState(null);
   const [loadingSafeLimit, setLoadingSafeLimit] = useState(false);
-  
+
   // Sem 7 configs
   const [sem7Configs, setSem7Configs] = useState([]);
   const [sem7Major1FacultyLimit, setSem7Major1FacultyLimit] = useState(5);
   const [sem7Major1MinGroupMembers, setSem7Major1MinGroupMembers] = useState(4);
   const [sem7Major1MaxGroupMembers, setSem7Major1MaxGroupMembers] = useState(5);
   const [sem7Major1AllowedFacultyTypes, setSem7Major1AllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
+  const [sem7Major1AllocationDeadline, setSem7Major1AllocationDeadline] = useState('');
   const [sem7Major1SafeMinimumLimit, setSem7Major1SafeMinimumLimit] = useState(null);
   const [loadingSem7Major1SafeLimit, setLoadingSem7Major1SafeLimit] = useState(false);
   const [sem7Internship1FacultyLimit, setSem7Internship1FacultyLimit] = useState(5);
   const [sem7Internship1AllowedFacultyTypes, setSem7Internship1AllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
+  const [sem7Internship1AllocationDeadline, setSem7Internship1AllocationDeadline] = useState('');
   const [sem7Internship1SafeMinimumLimit, setSem7Internship1SafeMinimumLimit] = useState(null);
   const [loadingSem7Internship1SafeLimit, setLoadingSem7Internship1SafeLimit] = useState(false);
-  
+
   // Sem 8 configs
   const [sem8Configs, setSem8Configs] = useState([]);
   // Type 1 Major Project 2 (Group)
@@ -78,11 +101,13 @@ const SystemConfiguration = () => {
   const [sem8Major2GroupMinMembers, setSem8Major2GroupMinMembers] = useState(4);
   const [sem8Major2GroupMaxMembers, setSem8Major2GroupMaxMembers] = useState(5);
   const [sem8Major2GroupAllowedFacultyTypes, setSem8Major2GroupAllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
+  const [sem8Major2AllocationDeadline, setSem8Major2AllocationDeadline] = useState('');
   const [sem8Major2GroupSafeMinimumLimit, setSem8Major2GroupSafeMinimumLimit] = useState(null);
   const [loadingSem8Major2GroupSafeLimit, setLoadingSem8Major2GroupSafeLimit] = useState(false);
   // Internship 2 (Type 1)
   const [sem8Internship2FacultyLimit, setSem8Internship2FacultyLimit] = useState(5);
   const [sem8Internship2AllowedFacultyTypes, setSem8Internship2AllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
+  const [sem8Internship2AllocationDeadline, setSem8Internship2AllocationDeadline] = useState('');
   const [sem8Internship2SafeMinimumLimit, setSem8Internship2SafeMinimumLimit] = useState(null);
   const [loadingSem8Internship2SafeLimit, setLoadingSem8Internship2SafeLimit] = useState(false);
   // Type 2 Major Project 2 (Solo)
@@ -90,16 +115,22 @@ const SystemConfiguration = () => {
   const [sem8Major2SoloAllowedFacultyTypes, setSem8Major2SoloAllowedFacultyTypes] = useState(['Regular', 'Adjunct', 'On Lien']);
   const [sem8Major2SoloSafeMinimumLimit, setSem8Major2SoloSafeMinimumLimit] = useState(null);
   const [loadingSem8Major2SoloSafeLimit, setLoadingSem8Major2SoloSafeLimit] = useState(false);
-  
+
+  // M.Tech configs
+  const [mtechConfigs, setMtechConfigs] = useState([]);
+  const [mtechSem3AllocationDeadline, setMtechSem3AllocationDeadline] = useState('');
+  const [mtechSem4AllocationDeadline, setMtechSem4AllocationDeadline] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [originalValues, setOriginalValues] = useState({});
   const [sem7OriginalValues, setSem7OriginalValues] = useState({});
   const [sem8OriginalValues, setSem8OriginalValues] = useState({});
-  
+  const [mtechOriginalValues, setMtechOriginalValues] = useState({});
+
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
+
   // Warning modal state (for reducing faculty preference limit)
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [warningData, setWarningData] = useState(null);
@@ -110,21 +141,25 @@ const SystemConfiguration = () => {
     const loadConfig = async () => {
       try {
         setLoading(true);
-        
+
         // Load Sem 5 configs
         const sem5Response = await adminAPI.getSystemConfigurations('sem5');
         const sem5ConfigData = sem5Response.data || [];
-        
+
         // Load Sem 7 configs
         const sem7Response = await adminAPI.getSystemConfigurations('sem7');
         const sem7ConfigData = sem7Response.data || [];
-        
+
         // Load Sem 8 configs
         const sem8Response = await adminAPI.getSystemConfigurations('sem8');
         const sem8ConfigData = sem8Response.data || [];
-        
+
+        // Load M.Tech configs
+        const mtechResponse = await adminAPI.getSystemConfigurations('mtech');
+        const mtechConfigData = mtechResponse.data || [];
+
         // If no configs found, auto-initialize them
-        if (sem5ConfigData.length === 0 || sem7ConfigData.length === 0 || sem8ConfigData.length === 0) {
+        if (sem5ConfigData.length === 0 || sem7ConfigData.length === 0 || sem8ConfigData.length === 0 || mtechConfigData.length === 0) {
           const loadingToast = toast.loading('Initializing system configurations...');
           try {
             await adminAPI.initializeSystemConfigs();
@@ -132,15 +167,19 @@ const SystemConfiguration = () => {
             const newSem5Response = await adminAPI.getSystemConfigurations('sem5');
             const newSem7Response = await adminAPI.getSystemConfigurations('sem7');
             const newSem8Response = await adminAPI.getSystemConfigurations('sem8');
+            const newMtechResponse = await adminAPI.getSystemConfigurations('mtech');
             const newSem5ConfigData = newSem5Response.data || [];
             const newSem7ConfigData = newSem7Response.data || [];
             const newSem8ConfigData = newSem8Response.data || [];
+            const newMtechConfigData = newMtechResponse.data || [];
             setConfigs(newSem5ConfigData);
             setSem7Configs(newSem7ConfigData);
             setSem8Configs(newSem8ConfigData);
+            setMtechConfigs(newMtechConfigData);
             loadSem5ConfigValues(newSem5ConfigData);
             loadSem7ConfigValues(newSem7ConfigData);
             loadSem8ConfigValues(newSem8ConfigData);
+            loadMtechConfigValues(newMtechConfigData);
             toast.success('System configurations initialized successfully', { id: loadingToast });
           } catch (initError) {
             console.error('Failed to initialize configurations:', initError);
@@ -150,9 +189,11 @@ const SystemConfiguration = () => {
           setConfigs(sem5ConfigData);
           setSem7Configs(sem7ConfigData);
           setSem8Configs(sem8ConfigData);
+          setMtechConfigs(mtechConfigData);
           loadSem5ConfigValues(sem5ConfigData);
           loadSem7ConfigValues(sem7ConfigData);
           loadSem8ConfigValues(sem8ConfigData);
+          loadMtechConfigValues(mtechConfigData);
         }
       } catch (error) {
         console.error('Failed to load system configuration:', error);
@@ -168,7 +209,8 @@ const SystemConfiguration = () => {
       const minMembersConfig = configData.find(c => c.configKey === 'sem5.minGroupMembers');
       const maxMembersConfig = configData.find(c => c.configKey === 'sem5.maxGroupMembers');
       const allowedFacultyTypesConfig = configData.find(c => c.configKey === 'sem5.minor2.allowedFacultyTypes');
-      
+      const allocationDeadlineConfig = configData.find(c => c.configKey === 'sem5.allocationDeadline');
+
       if (facultyPrefConfig) {
         setFacultyPreferenceLimit(facultyPrefConfig.configValue);
       }
@@ -181,13 +223,17 @@ const SystemConfiguration = () => {
       if (allowedFacultyTypesConfig && Array.isArray(allowedFacultyTypesConfig.configValue)) {
         setAllowedFacultyTypes(allowedFacultyTypesConfig.configValue);
       }
-      
+      if (allocationDeadlineConfig) {
+        setSem5AllocationDeadline(formatDateForInput(allocationDeadlineConfig.configValue));
+      }
+
       // Store original values
       setOriginalValues({
         facultyPreferenceLimit: facultyPrefConfig?.configValue || 7,
         minGroupMembers: minMembersConfig?.configValue || 4,
         maxGroupMembers: maxMembersConfig?.configValue || 5,
-        allowedFacultyTypes: allowedFacultyTypesConfig?.configValue || ['Regular', 'Adjunct', 'On Lien']
+        allowedFacultyTypes: allowedFacultyTypesConfig?.configValue || ['Regular', 'Adjunct', 'On Lien'],
+        allocationDeadline: allocationDeadlineConfig?.configValue || ''
       });
     };
 
@@ -197,9 +243,12 @@ const SystemConfiguration = () => {
       const major1MinMembers = configData.find(c => c.configKey === 'sem7.major1.minGroupMembers');
       const major1MaxMembers = configData.find(c => c.configKey === 'sem7.major1.maxGroupMembers');
       const major1AllowedTypes = configData.find(c => c.configKey === 'sem7.major1.allowedFacultyTypes');
+      const major1AllocationDeadline = configData.find(c => c.configKey === 'sem7.major1.allocationDeadline');
+
       const internship1FacultyLimit = configData.find(c => c.configKey === 'sem7.internship1.facultyPreferenceLimit');
       const internship1AllowedTypes = configData.find(c => c.configKey === 'sem7.internship1.allowedFacultyTypes');
-      
+      const internship1AllocationDeadline = configData.find(c => c.configKey === 'sem7.internship1.allocationDeadline');
+
       if (major1FacultyLimit) {
         setSem7Major1FacultyLimit(major1FacultyLimit.configValue);
       }
@@ -212,21 +261,29 @@ const SystemConfiguration = () => {
       if (major1AllowedTypes && Array.isArray(major1AllowedTypes.configValue)) {
         setSem7Major1AllowedFacultyTypes(major1AllowedTypes.configValue);
       }
+      if (major1AllocationDeadline) {
+        setSem7Major1AllocationDeadline(formatDateForInput(major1AllocationDeadline.configValue));
+      }
       if (internship1FacultyLimit) {
         setSem7Internship1FacultyLimit(internship1FacultyLimit.configValue);
       }
       if (internship1AllowedTypes && Array.isArray(internship1AllowedTypes.configValue)) {
         setSem7Internship1AllowedFacultyTypes(internship1AllowedTypes.configValue);
       }
-      
+      if (internship1AllocationDeadline) {
+        setSem7Internship1AllocationDeadline(formatDateForInput(internship1AllocationDeadline.configValue));
+      }
+
       // Store original values
       setSem7OriginalValues({
         major1FacultyLimit: major1FacultyLimit?.configValue || 5,
         major1MinGroupMembers: major1MinMembers?.configValue || 4,
         major1MaxGroupMembers: major1MaxMembers?.configValue || 5,
         major1AllowedFacultyTypes: major1AllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien'],
+        major1AllocationDeadline: major1AllocationDeadline?.configValue || '',
         internship1FacultyLimit: internship1FacultyLimit?.configValue || 5,
-        internship1AllowedFacultyTypes: internship1AllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien']
+        internship1AllowedFacultyTypes: internship1AllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien'],
+        internship1AllocationDeadline: internship1AllocationDeadline?.configValue || ''
       });
     };
 
@@ -236,7 +293,8 @@ const SystemConfiguration = () => {
       const major2GroupMinMembers = configData.find(c => c.configKey === 'sem8.major2.group.minGroupMembers');
       const major2GroupMaxMembers = configData.find(c => c.configKey === 'sem8.major2.group.maxGroupMembers');
       const major2GroupAllowedTypes = configData.find(c => c.configKey === 'sem8.major2.group.allowedFacultyTypes');
-      
+      const major2AllocationDeadline = configData.find(c => c.configKey === 'sem8.major2.allocationDeadline');
+
       if (major2GroupFacultyLimit) {
         setSem8Major2GroupFacultyLimit(major2GroupFacultyLimit.configValue);
       }
@@ -249,39 +307,65 @@ const SystemConfiguration = () => {
       if (major2GroupAllowedTypes && Array.isArray(major2GroupAllowedTypes.configValue)) {
         setSem8Major2GroupAllowedFacultyTypes(major2GroupAllowedTypes.configValue);
       }
-      
+      if (major2AllocationDeadline) {
+        setSem8Major2AllocationDeadline(formatDateForInput(major2AllocationDeadline.configValue));
+      }
+
       // Internship 2 (Type 1)
       const internship2FacultyLimit = configData.find(c => c.configKey === 'sem8.internship2.facultyPreferenceLimit');
       const internship2AllowedTypes = configData.find(c => c.configKey === 'sem8.internship2.allowedFacultyTypes');
-      
+      const internship2AllocationDeadline = configData.find(c => c.configKey === 'sem8.internship2.allocationDeadline');
+
       if (internship2FacultyLimit) {
         setSem8Internship2FacultyLimit(internship2FacultyLimit.configValue);
       }
       if (internship2AllowedTypes && Array.isArray(internship2AllowedTypes.configValue)) {
         setSem8Internship2AllowedFacultyTypes(internship2AllowedTypes.configValue);
       }
-      
+      if (internship2AllocationDeadline) {
+        setSem8Internship2AllocationDeadline(formatDateForInput(internship2AllocationDeadline.configValue));
+      }
+
       // Type 2 Major Project 2 (Solo)
       const major2SoloFacultyLimit = configData.find(c => c.configKey === 'sem8.major2.solo.facultyPreferenceLimit');
       const major2SoloAllowedTypes = configData.find(c => c.configKey === 'sem8.major2.solo.allowedFacultyTypes');
-      
+
       if (major2SoloFacultyLimit) {
         setSem8Major2SoloFacultyLimit(major2SoloFacultyLimit.configValue);
       }
       if (major2SoloAllowedTypes && Array.isArray(major2SoloAllowedTypes.configValue)) {
         setSem8Major2SoloAllowedFacultyTypes(major2SoloAllowedTypes.configValue);
       }
-      
+
       // Store original values
       setSem8OriginalValues({
         major2GroupFacultyLimit: major2GroupFacultyLimit?.configValue || 5,
         major2GroupMinMembers: major2GroupMinMembers?.configValue || 4,
         major2GroupMaxMembers: major2GroupMaxMembers?.configValue || 5,
         major2GroupAllowedFacultyTypes: major2GroupAllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien'],
+        major2AllocationDeadline: major2AllocationDeadline?.configValue || '',
         internship2FacultyLimit: internship2FacultyLimit?.configValue || 5,
         internship2AllowedFacultyTypes: internship2AllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien'],
+        internship2AllocationDeadline: internship2AllocationDeadline?.configValue || '',
         major2SoloFacultyLimit: major2SoloFacultyLimit?.configValue || 5,
         major2SoloAllowedFacultyTypes: major2SoloAllowedTypes?.configValue || ['Regular', 'Adjunct', 'On Lien']
+      });
+    };
+
+    const loadMtechConfigValues = (configData) => {
+      const sem3AllocationDeadline = configData.find(c => c.configKey === 'mtech.sem3.allocationDeadline');
+      const sem4AllocationDeadline = configData.find(c => c.configKey === 'mtech.sem4.allocationDeadline');
+
+      if (sem3AllocationDeadline) {
+        setMtechSem3AllocationDeadline(formatDateForInput(sem3AllocationDeadline.configValue));
+      }
+      if (sem4AllocationDeadline) {
+        setMtechSem4AllocationDeadline(formatDateForInput(sem4AllocationDeadline.configValue));
+      }
+
+      setMtechOriginalValues({
+        sem3AllocationDeadline: sem3AllocationDeadline?.configValue || '',
+        sem4AllocationDeadline: sem4AllocationDeadline?.configValue || ''
       });
     };
 
@@ -324,7 +408,7 @@ const SystemConfiguration = () => {
         } finally {
           setLoadingSem7Major1SafeLimit(false);
         }
-        
+
         // Load safe minimum limit for Internship 1
         try {
           setLoadingSem7Internship1SafeLimit(true);
@@ -340,7 +424,7 @@ const SystemConfiguration = () => {
         } finally {
           setLoadingSem7Internship1SafeLimit(false);
         }
-        
+
         setSafeMinimumLimit(null);
       } else if (activeTab === 'sem8') {
         // Load safe minimum limit based on active sub-tab
@@ -415,9 +499,9 @@ const SystemConfiguration = () => {
   const handleSaveClick = () => {
     if (activeTab === 'sem5') {
       // Validate Sem 5 values
-      if (typeof facultyPreferenceLimit !== 'number' || 
-          typeof minGroupMembers !== 'number' || 
-          typeof maxGroupMembers !== 'number') {
+      if (typeof facultyPreferenceLimit !== 'number' ||
+        typeof minGroupMembers !== 'number' ||
+        typeof maxGroupMembers !== 'number') {
         toast.error('Please enter valid numeric values');
         return;
       }
@@ -429,14 +513,14 @@ const SystemConfiguration = () => {
       }
     } else if (activeTab === 'sem7') {
       // Validate Sem 7 Major Project 1 values
-      if (typeof sem7Major1FacultyLimit !== 'number' || 
-          typeof sem7Major1MinGroupMembers !== 'number' || 
-          typeof sem7Major1MaxGroupMembers !== 'number' ||
-          typeof sem7Internship1FacultyLimit !== 'number') {
+      if (typeof sem7Major1FacultyLimit !== 'number' ||
+        typeof sem7Major1MinGroupMembers !== 'number' ||
+        typeof sem7Major1MaxGroupMembers !== 'number' ||
+        typeof sem7Internship1FacultyLimit !== 'number') {
         toast.error('Please enter valid numeric values');
         return;
       }
-      
+
       // Validate allowed faculty types arrays
       if (!Array.isArray(sem7Major1AllowedFacultyTypes) || sem7Major1AllowedFacultyTypes.length === 0) {
         toast.error('At least one faculty type must be selected for Major Project 1');
@@ -455,11 +539,11 @@ const SystemConfiguration = () => {
     } else if (activeTab === 'sem8') {
       // Validate Sem 8 values based on active sub-tab
       if (sem8SubTab === 'major2-group') {
-        if (typeof sem8Major2GroupFacultyLimit !== 'number' || 
-            typeof sem8Major2GroupMinMembers !== 'number' || 
-            typeof sem8Major2GroupMaxMembers !== 'number') {
-        toast.error('Please enter valid numeric values');
-        return;
+        if (typeof sem8Major2GroupFacultyLimit !== 'number' ||
+          typeof sem8Major2GroupMinMembers !== 'number' ||
+          typeof sem8Major2GroupMaxMembers !== 'number') {
+          toast.error('Please enter valid numeric values');
+          return;
         }
         if (!Array.isArray(sem8Major2GroupAllowedFacultyTypes) || sem8Major2GroupAllowedFacultyTypes.length === 0) {
           toast.error('At least one faculty type must be selected for Type 1 Major Project 2');
@@ -488,6 +572,12 @@ const SystemConfiguration = () => {
           return;
         }
       }
+    } else if (activeTab === 'mtech') {
+      if (mtechSubTab === 'sem3') {
+        // no strict validation needed for MTech just yet as it's only a date picker
+      } else if (mtechSubTab === 'sem4') {
+        // no strict validation needed
+      }
     }
 
     // Show confirmation modal
@@ -503,11 +593,11 @@ const SystemConfiguration = () => {
   const executeSave = async (forceUpdate = false) => {
     try {
       setSaving(true);
-      
+
       if (activeTab === 'sem5') {
         // Update Sem 5 configs
         try {
-          await adminAPI.updateSystemConfigByKey('sem5.facultyPreferenceLimit', facultyPreferenceLimit, 
+          await adminAPI.updateSystemConfigByKey('sem5.facultyPreferenceLimit', facultyPreferenceLimit,
             'Number of faculty preferences required for Sem 5 Minor Project 2 registration', forceUpdate);
         } catch (error) {
           // Check if it's a warning about existing registrations
@@ -520,27 +610,34 @@ const SystemConfiguration = () => {
           // Error already handled by warning modal, just throw to prevent further execution
           throw error;
         }
-        
+
         // Update min group members
         await adminAPI.updateSystemConfigByKey('sem5.minGroupMembers', minGroupMembers,
           'Minimum number of members required in a Sem 5 group');
-        
+
         // Update max group members
         await adminAPI.updateSystemConfigByKey('sem5.maxGroupMembers', maxGroupMembers,
           'Maximum number of members allowed in a Sem 5 group');
-        
+
         // Update allowed faculty types
         await adminAPI.updateSystemConfigByKey('sem5.minor2.allowedFacultyTypes', allowedFacultyTypes,
           'Faculty types allowed in dropdown for Sem 5 Minor Project 2 preferences (Regular, Adjunct, On Lien)');
-        
+
+        // Update allocation deadline
+        if (sem5AllocationDeadline !== originalValues.allocationDeadline) {
+          await adminAPI.updateSystemConfigByKey('sem5.allocationDeadline', sem5AllocationDeadline || null,
+            'Deadline for faculty to respond to Sem 5 Minor Project 2 allocation requests');
+        }
+
         // Update original values to current values
         setOriginalValues({
           facultyPreferenceLimit,
           minGroupMembers,
           maxGroupMembers,
-          allowedFacultyTypes
+          allowedFacultyTypes,
+          allocationDeadline: sem5AllocationDeadline
         });
-        
+
         // Reload configs to confirm changes
         const response = await adminAPI.getSystemConfigurations('sem5');
         setConfigs(response.data || []);
@@ -549,7 +646,7 @@ const SystemConfiguration = () => {
         if (sem7SubTab === 'major1') {
           // Update Sem 7 Major Project 1 configs only
           try {
-        await adminAPI.updateSystemConfigByKey('sem7.major1.facultyPreferenceLimit', sem7Major1FacultyLimit,
+            await adminAPI.updateSystemConfigByKey('sem7.major1.facultyPreferenceLimit', sem7Major1FacultyLimit,
               'Number of faculty preferences required for Sem 7 Major Project 1 registration', forceUpdate);
           } catch (error) {
             // Check if it's a warning about existing registrations
@@ -561,26 +658,32 @@ const SystemConfiguration = () => {
             }
             throw error;
           }
-          
+
           // Update min group members
           await adminAPI.updateSystemConfigByKey('sem7.major1.minGroupMembers', sem7Major1MinGroupMembers,
             'Minimum number of members required in a Sem 7 Major Project 1 group');
-          
+
           // Update max group members
           await adminAPI.updateSystemConfigByKey('sem7.major1.maxGroupMembers', sem7Major1MaxGroupMembers,
             'Maximum number of members allowed in a Sem 7 Major Project 1 group');
-          
+
           // Update allowed faculty types
           await adminAPI.updateSystemConfigByKey('sem7.major1.allowedFacultyTypes', sem7Major1AllowedFacultyTypes,
             'Faculty types allowed in dropdown for Sem 7 Major Project 1 preferences (Regular, Adjunct, On Lien)');
-        
+
+          if (sem7Major1AllocationDeadline !== sem7OriginalValues.major1AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('sem7.major1.allocationDeadline', sem7Major1AllocationDeadline || null,
+              'Deadline for faculty to respond to Sem 7 Major Project 1 allocation requests');
+          }
+
           // Update original values for Major Project 1 only
-        setSem7OriginalValues({
+          setSem7OriginalValues({
             ...sem7OriginalValues,
-          major1FacultyLimit: sem7Major1FacultyLimit,
+            major1FacultyLimit: sem7Major1FacultyLimit,
             major1MinGroupMembers: sem7Major1MinGroupMembers,
             major1MaxGroupMembers: sem7Major1MaxGroupMembers,
-            major1AllowedFacultyTypes: sem7Major1AllowedFacultyTypes
+            major1AllowedFacultyTypes: sem7Major1AllowedFacultyTypes,
+            major1AllocationDeadline: sem7Major1AllocationDeadline
           });
         } else if (sem7SubTab === 'internship1') {
           // Update Sem 7 Internship 1 configs only
@@ -597,18 +700,24 @@ const SystemConfiguration = () => {
             }
             throw error;
           }
-          
+
           await adminAPI.updateSystemConfigByKey('sem7.internship1.allowedFacultyTypes', sem7Internship1AllowedFacultyTypes,
             'Faculty types allowed in dropdown for Sem 7 Internship 1 preferences (Regular, Adjunct, On Lien)');
-          
+
+          if (sem7Internship1AllocationDeadline !== sem7OriginalValues.internship1AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('sem7.internship1.allocationDeadline', sem7Internship1AllocationDeadline || null,
+              'Deadline for faculty to respond to Sem 7 Internship 1 group allocation requests');
+          }
+
           // Update original values for Internship 1 only
           setSem7OriginalValues({
             ...sem7OriginalValues,
             internship1FacultyLimit: sem7Internship1FacultyLimit,
-            internship1AllowedFacultyTypes: sem7Internship1AllowedFacultyTypes
-        });
+            internship1AllowedFacultyTypes: sem7Internship1AllowedFacultyTypes,
+            internship1AllocationDeadline: sem7Internship1AllocationDeadline
+          });
         }
-        
+
         // Reload configs to confirm changes
         const response = await adminAPI.getSystemConfigurations('sem7');
         setSem7Configs(response.data || []);
@@ -634,16 +743,23 @@ const SystemConfiguration = () => {
             'Maximum number of members allowed in a Sem 8 Type 1 Major Project 2 group');
           await adminAPI.updateSystemConfigByKey('sem8.major2.group.allowedFacultyTypes', sem8Major2GroupAllowedFacultyTypes,
             'Faculty types allowed in dropdown for Sem 8 Type 1 Major Project 2 (group) preferences (Regular, Adjunct, On Lien)');
+
+          if (sem8Major2AllocationDeadline !== sem8OriginalValues.major2AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('sem8.major2.allocationDeadline', sem8Major2AllocationDeadline || null,
+              'Deadline for faculty to respond to Sem 8 Major Project 2 allocation requests');
+          }
+
           setSem8OriginalValues({
             ...sem8OriginalValues,
             major2GroupFacultyLimit: sem8Major2GroupFacultyLimit,
             major2GroupMinMembers: sem8Major2GroupMinMembers,
             major2GroupMaxMembers: sem8Major2GroupMaxMembers,
-            major2GroupAllowedFacultyTypes: sem8Major2GroupAllowedFacultyTypes
+            major2GroupAllowedFacultyTypes: sem8Major2GroupAllowedFacultyTypes,
+            major2AllocationDeadline: sem8Major2AllocationDeadline
           });
         } else if (sem8SubTab === 'internship2') {
           try {
-        await adminAPI.updateSystemConfigByKey('sem8.internship2.facultyPreferenceLimit', sem8Internship2FacultyLimit,
+            await adminAPI.updateSystemConfigByKey('sem8.internship2.facultyPreferenceLimit', sem8Internship2FacultyLimit,
               'Number of faculty preferences required for Sem 8 Internship 2 registration', forceUpdate);
           } catch (error) {
             if (error.response?.data?.warning?.type === 'EXISTING_REGISTRATIONS_AFFECTED') {
@@ -656,10 +772,17 @@ const SystemConfiguration = () => {
           }
           await adminAPI.updateSystemConfigByKey('sem8.internship2.allowedFacultyTypes', sem8Internship2AllowedFacultyTypes,
             'Faculty types allowed in dropdown for Sem 8 Internship 2 preferences (Regular, Adjunct, On Lien)');
-        setSem8OriginalValues({
+
+          if (sem8Internship2AllocationDeadline !== sem8OriginalValues.internship2AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('sem8.internship2.allocationDeadline', sem8Internship2AllocationDeadline || null,
+              'Deadline for faculty to respond to Sem 8 Internship 2 solo allocation requests');
+          }
+
+          setSem8OriginalValues({
             ...sem8OriginalValues,
             internship2FacultyLimit: sem8Internship2FacultyLimit,
-            internship2AllowedFacultyTypes: sem8Internship2AllowedFacultyTypes
+            internship2AllowedFacultyTypes: sem8Internship2AllowedFacultyTypes,
+            internship2AllocationDeadline: sem8Internship2AllocationDeadline
           });
         } else if (sem8SubTab === 'major2-solo') {
           try {
@@ -684,8 +807,30 @@ const SystemConfiguration = () => {
         }
         const response = await adminAPI.getSystemConfigurations('sem8');
         setSem8Configs(response.data || []);
+      } else if (activeTab === 'mtech') {
+        if (mtechSubTab === 'sem3') {
+          if (mtechSem3AllocationDeadline !== mtechOriginalValues.sem3AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('mtech.sem3.allocationDeadline', mtechSem3AllocationDeadline || null,
+              'Deadline for faculty to respond to M.Tech Sem 3 Major Project 1 allocation requests');
+          }
+          setMtechOriginalValues({
+            ...mtechOriginalValues,
+            sem3AllocationDeadline: mtechSem3AllocationDeadline
+          });
+        } else if (mtechSubTab === 'sem4') {
+          if (mtechSem4AllocationDeadline !== mtechOriginalValues.sem4AllocationDeadline) {
+            await adminAPI.updateSystemConfigByKey('mtech.sem4.allocationDeadline', mtechSem4AllocationDeadline || null,
+              'Deadline for faculty to respond to M.Tech Sem 4 Major Project 2 allocation requests');
+          }
+          setMtechOriginalValues({
+            ...mtechOriginalValues,
+            sem4AllocationDeadline: mtechSem4AllocationDeadline
+          });
+        }
+        const response = await adminAPI.getSystemConfigurations('mtech');
+        setMtechConfigs(response.data || []);
       }
-      
+
       toast.success('Configuration saved successfully!');
       // Reload safe minimum limit after successful save
       if (activeTab === 'sem5') {
@@ -719,7 +864,7 @@ const SystemConfiguration = () => {
       console.error('Error saving configuration:', error);
       // Only show toast if warning modal is not being shown
       if (error.response?.data?.warning?.type !== 'EXISTING_REGISTRATIONS_AFFECTED') {
-      toast.error(error.response?.data?.message || 'Failed to save configuration');
+        toast.error(error.response?.data?.message || 'Failed to save configuration');
       }
     } finally {
       setSaving(false);
@@ -742,52 +887,75 @@ const SystemConfiguration = () => {
       setSem7Major1MinGroupMembers(sem7OriginalValues.major1MinGroupMembers || 4);
       setSem7Major1MaxGroupMembers(sem7OriginalValues.major1MaxGroupMembers || 5);
       setSem7Major1AllowedFacultyTypes(sem7OriginalValues.major1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']);
+      setSem7Major1AllocationDeadline(sem7OriginalValues.major1AllocationDeadline || '');
       setSem7Internship1FacultyLimit(sem7OriginalValues.internship1FacultyLimit || 5);
       setSem7Internship1AllowedFacultyTypes(sem7OriginalValues.internship1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']);
+      setSem7Internship1AllocationDeadline(sem7OriginalValues.internship1AllocationDeadline || '');
     } else if (activeTab === 'sem8') {
       if (sem8SubTab === 'major2-group') {
         setSem8Major2GroupFacultyLimit(sem8OriginalValues.major2GroupFacultyLimit || 5);
         setSem8Major2GroupMinMembers(sem8OriginalValues.major2GroupMinMembers || 4);
         setSem8Major2GroupMaxMembers(sem8OriginalValues.major2GroupMaxMembers || 5);
         setSem8Major2GroupAllowedFacultyTypes(sem8OriginalValues.major2GroupAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']);
+        setSem8Major2AllocationDeadline(sem8OriginalValues.major2AllocationDeadline || '');
       } else if (sem8SubTab === 'internship2') {
-      setSem8Internship2FacultyLimit(sem8OriginalValues.internship2FacultyLimit || 5);
+        setSem8Internship2FacultyLimit(sem8OriginalValues.internship2FacultyLimit || 5);
         setSem8Internship2AllowedFacultyTypes(sem8OriginalValues.internship2AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']);
+        setSem8Internship2AllocationDeadline(sem8OriginalValues.internship2AllocationDeadline || '');
       } else if (sem8SubTab === 'major2-solo') {
         setSem8Major2SoloFacultyLimit(sem8OriginalValues.major2SoloFacultyLimit || 5);
         setSem8Major2SoloAllowedFacultyTypes(sem8OriginalValues.major2SoloAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']);
+      }
+    } else if (activeTab === 'mtech') {
+      if (mtechSubTab === 'sem3') {
+        setMtechSem3AllocationDeadline(mtechOriginalValues.sem3AllocationDeadline || '');
+      } else if (mtechSubTab === 'sem4') {
+        setMtechSem4AllocationDeadline(mtechOriginalValues.sem4AllocationDeadline || '');
       }
     }
     toast.success('Configuration reset to original values');
   };
 
-  const hasChanges = activeTab === 'sem5' 
+  const hasChanges = activeTab === 'sem5'
     ? ((typeof facultyPreferenceLimit === 'number' && facultyPreferenceLimit !== (originalValues.facultyPreferenceLimit || 7)) ||
-       (typeof minGroupMembers === 'number' && minGroupMembers !== (originalValues.minGroupMembers || 4)) ||
-       (typeof maxGroupMembers === 'number' && maxGroupMembers !== (originalValues.maxGroupMembers || 5)) ||
-       (Array.isArray(allowedFacultyTypes) && JSON.stringify(allowedFacultyTypes.sort()) !== JSON.stringify((originalValues.allowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
+      (typeof minGroupMembers === 'number' && minGroupMembers !== (originalValues.minGroupMembers || 4)) ||
+      (typeof maxGroupMembers === 'number' && maxGroupMembers !== (originalValues.maxGroupMembers || 5)) ||
+      (Array.isArray(allowedFacultyTypes) && JSON.stringify(allowedFacultyTypes.sort()) !== JSON.stringify((originalValues.allowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())) ||
+      (sem5AllocationDeadline !== (originalValues.allocationDeadline || '')))
     : activeTab === 'sem7'
-    ? (sem7SubTab === 'major1'
-    ? ((typeof sem7Major1FacultyLimit === 'number' && sem7Major1FacultyLimit !== (sem7OriginalValues.major1FacultyLimit || 5)) ||
+      ? (sem7SubTab === 'major1'
+        ? ((typeof sem7Major1FacultyLimit === 'number' && sem7Major1FacultyLimit !== (sem7OriginalValues.major1FacultyLimit || 5)) ||
           (typeof sem7Major1MinGroupMembers === 'number' && sem7Major1MinGroupMembers !== (sem7OriginalValues.major1MinGroupMembers || 4)) ||
           (typeof sem7Major1MaxGroupMembers === 'number' && sem7Major1MaxGroupMembers !== (sem7OriginalValues.major1MaxGroupMembers || 5)) ||
-          (Array.isArray(sem7Major1AllowedFacultyTypes) && JSON.stringify(sem7Major1AllowedFacultyTypes.sort()) !== JSON.stringify((sem7OriginalValues.major1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
-       : (sem7SubTab === 'internship1'
+          (Array.isArray(sem7Major1AllowedFacultyTypes) && JSON.stringify(sem7Major1AllowedFacultyTypes.sort()) !== JSON.stringify((sem7OriginalValues.major1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())) ||
+          (sem7Major1AllocationDeadline !== (sem7OriginalValues.major1AllocationDeadline || '')))
+        : (sem7SubTab === 'internship1'
           ? ((typeof sem7Internship1FacultyLimit === 'number' && sem7Internship1FacultyLimit !== (sem7OriginalValues.internship1FacultyLimit || 5)) ||
-             (Array.isArray(sem7Internship1AllowedFacultyTypes) && JSON.stringify(sem7Internship1AllowedFacultyTypes.sort()) !== JSON.stringify((sem7OriginalValues.internship1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
+            (Array.isArray(sem7Internship1AllowedFacultyTypes) && JSON.stringify(sem7Internship1AllowedFacultyTypes.sort()) !== JSON.stringify((sem7OriginalValues.internship1AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())) ||
+            (sem7Internship1AllocationDeadline !== (sem7OriginalValues.internship1AllocationDeadline || '')))
           : false))
-    : (sem8SubTab === 'major2-group'
-      ? ((typeof sem8Major2GroupFacultyLimit === 'number' && sem8Major2GroupFacultyLimit !== (sem8OriginalValues.major2GroupFacultyLimit || 5)) ||
-         (typeof sem8Major2GroupMinMembers === 'number' && sem8Major2GroupMinMembers !== (sem8OriginalValues.major2GroupMinMembers || 4)) ||
-         (typeof sem8Major2GroupMaxMembers === 'number' && sem8Major2GroupMaxMembers !== (sem8OriginalValues.major2GroupMaxMembers || 5)) ||
-         (Array.isArray(sem8Major2GroupAllowedFacultyTypes) && JSON.stringify(sem8Major2GroupAllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.major2GroupAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
-      : sem8SubTab === 'internship2'
-        ? ((typeof sem8Internship2FacultyLimit === 'number' && sem8Internship2FacultyLimit !== (sem8OriginalValues.internship2FacultyLimit || 5)) ||
-           (Array.isArray(sem8Internship2AllowedFacultyTypes) && JSON.stringify(sem8Internship2AllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.internship2AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
-        : sem8SubTab === 'major2-solo'
-          ? ((typeof sem8Major2SoloFacultyLimit === 'number' && sem8Major2SoloFacultyLimit !== (sem8OriginalValues.major2SoloFacultyLimit || 5)) ||
-             (Array.isArray(sem8Major2SoloAllowedFacultyTypes) && JSON.stringify(sem8Major2SoloAllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.major2SoloAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
-          : false);
+      : activeTab === 'sem8'
+        ? (sem8SubTab === 'major2-group'
+          ? ((typeof sem8Major2GroupFacultyLimit === 'number' && sem8Major2GroupFacultyLimit !== (sem8OriginalValues.major2GroupFacultyLimit || 5)) ||
+            (typeof sem8Major2GroupMinMembers === 'number' && sem8Major2GroupMinMembers !== (sem8OriginalValues.major2GroupMinMembers || 4)) ||
+            (typeof sem8Major2GroupMaxMembers === 'number' && sem8Major2GroupMaxMembers !== (sem8OriginalValues.major2GroupMaxMembers || 5)) ||
+            (Array.isArray(sem8Major2GroupAllowedFacultyTypes) && JSON.stringify(sem8Major2GroupAllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.major2GroupAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())) ||
+            (sem8Major2AllocationDeadline !== (sem8OriginalValues.major2AllocationDeadline || '')))
+          : sem8SubTab === 'internship2'
+            ? ((typeof sem8Internship2FacultyLimit === 'number' && sem8Internship2FacultyLimit !== (sem8OriginalValues.internship2FacultyLimit || 5)) ||
+              (Array.isArray(sem8Internship2AllowedFacultyTypes) && JSON.stringify(sem8Internship2AllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.internship2AllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())) ||
+              (sem8Internship2AllocationDeadline !== (sem8OriginalValues.internship2AllocationDeadline || '')))
+            : sem8SubTab === 'major2-solo'
+              ? ((typeof sem8Major2SoloFacultyLimit === 'number' && sem8Major2SoloFacultyLimit !== (sem8OriginalValues.major2SoloFacultyLimit || 5)) ||
+                (Array.isArray(sem8Major2SoloAllowedFacultyTypes) && JSON.stringify(sem8Major2SoloAllowedFacultyTypes.sort()) !== JSON.stringify((sem8OriginalValues.major2SoloAllowedFacultyTypes || ['Regular', 'Adjunct', 'On Lien']).sort())))
+              : false)
+        : activeTab === 'mtech'
+          ? (mtechSubTab === 'sem3'
+            ? mtechSem3AllocationDeadline !== (mtechOriginalValues.sem3AllocationDeadline || '')
+            : mtechSubTab === 'sem4'
+              ? mtechSem4AllocationDeadline !== (mtechOriginalValues.sem4AllocationDeadline || '')
+              : false)
+          : false;
 
   if (loading) {
     return (
@@ -839,9 +1007,9 @@ const SystemConfiguration = () => {
             <div className="ml-3">
               <p className="text-sm text-blue-700">
                 <strong>System-Wide Settings:</strong> Changes made here will affect all students registering for {
-                  activeTab === 'sem5' ? 'Sem 5 Minor Project 2' : 
-                  activeTab === 'sem7' ? (sem7SubTab === 'major1' ? 'Sem 7 Major Project 1' : 'Sem 7 Internship 1') :
-                  'Sem 8 Major Project 2 and Internship 2'
+                  activeTab === 'sem5' ? 'Sem 5 Minor Project 2' :
+                    activeTab === 'sem7' ? (sem7SubTab === 'major1' ? 'Sem 7 Major Project 1' : 'Sem 7 Internship 1') :
+                      'Sem 8 Major Project 2 and Internship 2'
                 }. You'll be asked to confirm before saving.
               </p>
             </div>
@@ -854,11 +1022,10 @@ const SystemConfiguration = () => {
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('sem5')}
-                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'sem5'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeTab === 'sem5'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 Semester 5 (Minor Project 2)
               </button>
@@ -868,11 +1035,10 @@ const SystemConfiguration = () => {
                   // Reset sub-tab to major1 when switching to sem7 tab
                   setSem7SubTab('major1');
                 }}
-                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'sem7'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeTab === 'sem7'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 Semester 7
               </button>
@@ -882,13 +1048,24 @@ const SystemConfiguration = () => {
                   // Reset sub-tab to major2-group when switching to sem8 tab
                   setSem8SubTab('major2-group');
                 }}
-                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'sem8'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeTab === 'sem8'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 Semester 8
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('mtech');
+                  setMtechSubTab('sem3');
+                }}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeTab === 'mtech'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                M.Tech
               </button>
             </nav>
           </div>
@@ -899,766 +1076,97 @@ const SystemConfiguration = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Configuration Settings</h2>
             <p className="text-gray-600 mt-1">
-              {activeTab === 'sem5' 
+              {activeTab === 'sem5'
                 ? 'Adjust system parameters for Sem 5 Minor Project 2'
                 : activeTab === 'sem7'
-                ? (sem7SubTab === 'major1' ? 'Configure settings for Sem 7 Major Project 1' : 'Configure settings for Sem 7 Internship 1')
-                : sem8SubTab === 'major2-group' 
-                  ? 'Configure settings for Sem 8 Type 1 Major Project 2 (Group)'
-                  : sem8SubTab === 'internship2'
-                    ? 'Configure settings for Sem 8 Type 1 Internship 2'
-                    : 'Configure settings for Sem 8 Type 2 Major Project 2 (Solo)'}
+                  ? (sem7SubTab === 'major1' ? 'Configure settings for Sem 7 Major Project 1' : 'Configure settings for Sem 7 Internship 1')
+                  : sem8SubTab === 'major2-group'
+                    ? 'Configure settings for Sem 8 Type 1 Major Project 2 (Group)'
+                    : sem8SubTab === 'internship2'
+                      ? 'Configure settings for Sem 8 Type 1 Internship 2'
+                      : 'Configure settings for Sem 8 Type 2 Major Project 2 (Solo)'}
             </p>
           </div>
-          
+
           <div className="p-6 space-y-8">
             {/* Sem 5 Configuration Section */}
             {activeTab === 'sem5' && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded mr-2 text-sm">Sem 5</span>
-                Minor Project 2 Settings
-              </h3>
-              
-              <div className="space-y-6">
-                {/* Faculty Preference Limit */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Faculty Preference Limit
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Number of faculty preferences required during registration
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={facultyPreferenceLimit}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setFacultyPreferenceLimit('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setFacultyPreferenceLimit(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (facultyPreferenceLimit === '' || facultyPreferenceLimit < 1) {
-                          setFacultyPreferenceLimit(1);
-                        } else if (facultyPreferenceLimit > 10) {
-                          setFacultyPreferenceLimit(10);
-                        }
-                      }}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        safeMinimumLimit !== null && safeMinimumLimit > 0 && facultyPreferenceLimit < safeMinimumLimit
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-gray-300 focus:ring-indigo-500'
-                      }`}
-                    />
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs text-gray-500">
-                      Range: 1-10 preferences
-                    </p>
-                      {safeMinimumLimit !== null && safeMinimumLimit > 0 && 
-                       facultyPreferenceLimit !== originalValues.facultyPreferenceLimit && (
-                        <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
-                          <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div className="flex-1">
-                            <p className="text-xs font-medium text-blue-800">
-                              <strong>Current Projects:</strong> Some registered projects are using <strong>{safeMinimumLimit}</strong> faculty preferences.
-                            </p>
-                            <p className="text-xs mt-1 text-blue-700">
-                              <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
-                            </p>
-                            {facultyPreferenceLimit !== safeMinimumLimit && (
-                              <button
-                                type="button"
-                                onClick={() => setFacultyPreferenceLimit(safeMinimumLimit)}
-                                className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                              >
-                                Use Current Maximum ({safeMinimumLimit})
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {safeMinimumLimit === 0 && !loadingSafeLimit && (
-                        <p className="text-xs text-gray-500 italic">
-                          No existing registrations found. You can set any value between 1-10.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Min Group Members */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Minimum Group Members
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum number of students required in a group
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={minGroupMembers}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setMinGroupMembers('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setMinGroupMembers(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (minGroupMembers === '' || minGroupMembers < 1) {
-                          setMinGroupMembers(1);
-                        } else if (minGroupMembers > 10) {
-                          setMinGroupMembers(10);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 members
-                    </p>
-                  </div>
-                </div>
-
-                {/* Max Group Members */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Maximum Group Members
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum number of students allowed in a group
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={maxGroupMembers}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setMaxGroupMembers('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setMaxGroupMembers(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (maxGroupMembers === '' || maxGroupMembers < 1) {
-                          setMaxGroupMembers(1);
-                        } else if (maxGroupMembers > 10) {
-                          setMaxGroupMembers(10);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 members
-                    </p>
-                  </div>
-                </div>
-
-                {/* Allowed Faculty Types */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Allowed Faculty Types
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Select which faculty types should appear in the preferences dropdown
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Selected: {allowedFacultyTypes.length}/3 types
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="space-y-3">
-                      {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                        <label key={type} className="flex items-center space-x-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={allowedFacultyTypes.includes(type)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setAllowedFacultyTypes([...allowedFacultyTypes, type]);
-                              } else {
-                                // Ensure at least one type is selected
-                                if (allowedFacultyTypes.length > 1) {
-                                  setAllowedFacultyTypes(allowedFacultyTypes.filter(t => t !== type));
-                                } else {
-                                  toast.error('At least one faculty type must be selected');
-                                }
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{type}</span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            type === 'Regular' ? 'bg-green-100 text-green-800' :
-                            type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
-                            'bg-orange-100 text-orange-800'
-                          }`}>
-                            {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Only selected faculty types will appear in the faculty preferences dropdown during registration.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Sem 7 Configuration Section */}
-            {activeTab === 'sem7' && (
-            <div>
-              {/* Nested Sub-tabs for Sem 7 */}
-              <div className="mb-6 border-b border-gray-200">
-                <nav className="flex -mb-px">
-                  <button
-                    onClick={() => setSem7SubTab('major1')}
-                    className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-                      sem7SubTab === 'major1'
-                        ? 'border-purple-500 text-purple-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Major Project 1
-                  </button>
-                  <button
-                    onClick={() => setSem7SubTab('internship1')}
-                    className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-                      sem7SubTab === 'internship1'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Internship 1
-                  </button>
-                </nav>
-              </div>
-
-              {/* Major Project 1 Configuration Section */}
-              {sem7SubTab === 'major1' && (
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 7</span>
-                  Major Project 1 Settings
-              </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Configure settings for Semester 7 Major Project 1 (group projects)
-                </p>
-              
-              <div className="space-y-6">
-                {/* Major Project 1 Faculty Preference Limit */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Major Project 1 Faculty Preference Limit
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Number of faculty preferences required for Major Project 1 registration
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={sem7Major1FacultyLimit}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setSem7Major1FacultyLimit('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setSem7Major1FacultyLimit(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (sem7Major1FacultyLimit === '' || sem7Major1FacultyLimit < 1) {
-                          setSem7Major1FacultyLimit(1);
-                        } else if (sem7Major1FacultyLimit > 10) {
-                          setSem7Major1FacultyLimit(10);
-                        }
-                      }}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        sem7Major1SafeMinimumLimit !== null && sem7Major1SafeMinimumLimit > 0 && sem7Major1FacultyLimit < sem7Major1SafeMinimumLimit
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-gray-300 focus:ring-indigo-500'
-                      }`}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 preferences
-                    </p>
-                    {/* Safe Minimum Limit Info */}
-                    {sem7Major1SafeMinimumLimit !== null && sem7Major1SafeMinimumLimit > 0 && 
-                     sem7Major1FacultyLimit !== sem7OriginalValues.major1FacultyLimit && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm text-blue-800">
-                              <strong>Current Maximum:</strong> Some existing projects have up to <strong>{sem7Major1SafeMinimumLimit}</strong> faculty preferences.
-                            </p>
-                            <p className="text-xs text-blue-700 mt-1">
-                              Changing this limit will not affect currently registered projects. They will continue to use their original preference counts.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setSem7Major1FacultyLimit(sem7Major1SafeMinimumLimit)}
-                              className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-                            >
-                              Use Current Maximum ({sem7Major1SafeMinimumLimit})
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {loadingSem7Major1SafeLimit && (
-                      <p className="text-xs text-gray-500 mt-1">Loading current maximum...</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Major Project 1 Min Group Members */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Major Project 1 Minimum Group Members
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum number of members required in a Major Project 1 group
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={sem7Major1MinGroupMembers}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setSem7Major1MinGroupMembers('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setSem7Major1MinGroupMembers(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (sem7Major1MinGroupMembers === '' || sem7Major1MinGroupMembers < 1) {
-                          setSem7Major1MinGroupMembers(1);
-                        } else if (sem7Major1MinGroupMembers > 10) {
-                          setSem7Major1MinGroupMembers(10);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 members
-                    </p>
-                  </div>
-                </div>
-
-                {/* Major Project 1 Max Group Members */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Major Project 1 Maximum Group Members
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum number of members allowed in a Major Project 1 group
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={sem7Major1MaxGroupMembers}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setSem7Major1MaxGroupMembers('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setSem7Major1MaxGroupMembers(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (sem7Major1MaxGroupMembers === '' || sem7Major1MaxGroupMembers < 1) {
-                          setSem7Major1MaxGroupMembers(1);
-                        } else if (sem7Major1MaxGroupMembers > 10) {
-                          setSem7Major1MaxGroupMembers(10);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 members
-                    </p>
-                  </div>
-                </div>
-
-                {/* Major Project 1 Allowed Faculty Types */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Major Project 1 Allowed Faculty Types
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Select which faculty types should appear in the preferences dropdown
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Selected: {sem7Major1AllowedFacultyTypes.length}/3 types
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="space-y-3">
-                      {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                        <label key={type} className="flex items-center space-x-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={sem7Major1AllowedFacultyTypes.includes(type)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSem7Major1AllowedFacultyTypes([...sem7Major1AllowedFacultyTypes, type]);
-                              } else {
-                                // Ensure at least one type is selected
-                                if (sem7Major1AllowedFacultyTypes.length > 1) {
-                                  setSem7Major1AllowedFacultyTypes(sem7Major1AllowedFacultyTypes.filter(t => t !== type));
-                                } else {
-                                  toast.error('At least one faculty type must be selected');
-                                }
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{type}</span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            type === 'Regular' ? 'bg-green-100 text-green-800' :
-                            type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
-                            'bg-orange-100 text-orange-800'
-                          }`}>
-                            {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Only selected faculty types will appear in the faculty preferences dropdown during registration.
-                    </p>
-                  </div>
-                </div>
-                </div>
-              </div>
-              )}
-
-              {/* Internship 1 Configuration Section */}
-              {sem7SubTab === 'internship1' && (
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 7</span>
-                  Internship 1 Settings
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded mr-2 text-sm">Sem 5</span>
+                  Minor Project 2 Settings
                 </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Configure settings for Semester 7 Internship 1 (solo projects)
-                </p>
-              
-                <div className="space-y-6">
-                {/* Internship 1 Faculty Preference Limit */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Internship 1 Faculty Preference Limit
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Number of faculty preferences required for Internship 1 (solo project) registration
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={sem7Internship1FacultyLimit}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setSem7Internship1FacultyLimit('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setSem7Internship1FacultyLimit(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (sem7Internship1FacultyLimit === '' || sem7Internship1FacultyLimit < 1) {
-                          setSem7Internship1FacultyLimit(1);
-                        } else if (sem7Internship1FacultyLimit > 10) {
-                          setSem7Internship1FacultyLimit(10);
-                        }
-                      }}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        sem7Internship1SafeMinimumLimit !== null && sem7Internship1SafeMinimumLimit > 0 && sem7Internship1FacultyLimit < sem7Internship1SafeMinimumLimit
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-gray-300 focus:ring-indigo-500'
-                      }`}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Range: 1-10 preferences
-                    </p>
-                      {/* Safe Minimum Limit Info */}
-                      {sem7Internship1SafeMinimumLimit !== null && sem7Internship1SafeMinimumLimit > 0 && 
-                       sem7Internship1FacultyLimit !== sem7OriginalValues.internship1FacultyLimit && (
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0">
-                              <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                              </svg>
-                  </div>
-                            <div className="ml-3 flex-1">
-                              <p className="text-sm text-blue-800">
-                                <strong>Current Maximum:</strong> Some existing projects have up to <strong>{sem7Internship1SafeMinimumLimit}</strong> faculty preferences.
-                              </p>
-                              <p className="text-xs text-blue-700 mt-1">
-                                Changing this limit will not affect currently registered projects. They will continue to use their original preference counts.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => setSem7Internship1FacultyLimit(sem7Internship1SafeMinimumLimit)}
-                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-                              >
-                                Use Current Maximum ({sem7Internship1SafeMinimumLimit})
-                              </button>
-                </div>
-              </div>
-                        </div>
-                      )}
-                      {loadingSem7Internship1SafeLimit && (
-                        <p className="text-xs text-gray-500 mt-1">Loading current maximum...</p>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Internship 1 Allowed Faculty Types */}
+                <div className="space-y-6">
+                  {/* Faculty Preference Limit */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-gray-700">
-                        Internship 1 Allowed Faculty Types
+                        Faculty Preference Limit
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        Select which faculty types should appear in the preferences dropdown
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Selected: {sem7Internship1AllowedFacultyTypes.length}/3 types
+                        Number of faculty preferences required during registration
                       </p>
                     </div>
                     <div className="md:col-span-2">
-                      <div className="space-y-3">
-                        {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                          <label key={type} className="flex items-center space-x-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={sem7Internship1AllowedFacultyTypes.includes(type)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSem7Internship1AllowedFacultyTypes([...sem7Internship1AllowedFacultyTypes, type]);
-                                } else {
-                                  // Ensure at least one type is selected
-                                  if (sem7Internship1AllowedFacultyTypes.length > 1) {
-                                    setSem7Internship1AllowedFacultyTypes(sem7Internship1AllowedFacultyTypes.filter(t => t !== type));
-                                  } else {
-                                    toast.error('At least one faculty type must be selected');
-                                  }
-                                }
-                              }}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">{type}</span>
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              type === 'Regular' ? 'bg-green-100 text-green-800' :
-                              type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
-                              'bg-orange-100 text-orange-800'
-                            }`}>
-                              {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Only selected faculty types will appear in the faculty preferences dropdown during registration.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              )}
-            </div>
-            )}
-
-            {/* Sem 8 Configuration Section */}
-            {activeTab === 'sem8' && (
-            <div>
-              {/* Nested Sub-tabs for Sem 8 */}
-              <div className="mb-6 border-b border-gray-200">
-                <nav className="flex -mb-px">
-                  <button
-                    onClick={() => setSem8SubTab('major2-group')}
-                    className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-                      sem8SubTab === 'major2-group'
-                        ? 'border-purple-500 text-purple-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Type 1 Major Project 2 (Group)
-                  </button>
-                  <button
-                    onClick={() => setSem8SubTab('internship2')}
-                    className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-                      sem8SubTab === 'internship2'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Type 1 Internship 2
-                  </button>
-                  <button
-                    onClick={() => setSem8SubTab('major2-solo')}
-                    className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
-                      sem8SubTab === 'major2-solo'
-                        ? 'border-green-500 text-green-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    Type 2 Major Project 2 (Solo)
-                  </button>
-                </nav>
-              </div>
-
-              {/* Type 1 Major Project 2 (Group) Configuration Section */}
-              {sem8SubTab === 'major2-group' && (
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
-                  Type 1 Major Project 2 (Group) Settings
-              </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Configure settings for Semester 8 Type 1 Major Project 2 group projects
-                </p>
-              
-              <div className="space-y-6">
-                  {/* Faculty Preference Limit */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Faculty Preference Limit
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Number of faculty preferences required during registration
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                        value={sem8Major2GroupFacultyLimit}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                            setSem8Major2GroupFacultyLimit('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                              setSem8Major2GroupFacultyLimit(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                          if (sem8Major2GroupFacultyLimit === '' || sem8Major2GroupFacultyLimit < 1) {
-                            setSem8Major2GroupFacultyLimit(1);
-                          } else if (sem8Major2GroupFacultyLimit > 10) {
-                            setSem8Major2GroupFacultyLimit(10);
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={facultyPreferenceLimit}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setFacultyPreferenceLimit('');
+                          } else {
+                            const num = parseInt(val);
+                            if (!isNaN(num) && num >= 1 && num <= 10) {
+                              setFacultyPreferenceLimit(num);
+                            }
                           }
                         }}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                          sem8Major2GroupSafeMinimumLimit !== null && sem8Major2GroupSafeMinimumLimit > 0 && sem8Major2GroupFacultyLimit < sem8Major2GroupSafeMinimumLimit
-                            ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                            : 'border-gray-300 focus:ring-indigo-500'
-                        }`}
+                        onBlur={(e) => {
+                          if (facultyPreferenceLimit === '' || facultyPreferenceLimit < 1) {
+                            setFacultyPreferenceLimit(1);
+                          } else if (facultyPreferenceLimit > 10) {
+                            setFacultyPreferenceLimit(10);
+                          }
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${safeMinimumLimit !== null && safeMinimumLimit > 0 && facultyPreferenceLimit < safeMinimumLimit
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-indigo-500'
+                          }`}
                       />
                       <div className="mt-2 space-y-1">
                         <p className="text-xs text-gray-500">
                           Range: 1-10 preferences
                         </p>
-                        {sem8Major2GroupSafeMinimumLimit !== null && sem8Major2GroupSafeMinimumLimit > 0 && 
-                         sem8Major2GroupFacultyLimit !== sem8OriginalValues.major2GroupFacultyLimit && (
-                          <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
-                            <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div className="flex-1">
-                              <p className="text-xs font-medium text-blue-800">
-                                <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Major2GroupSafeMinimumLimit}</strong> faculty preferences.
-                              </p>
-                              <p className="text-xs mt-1 text-blue-700">
-                                <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
-                              </p>
-                              {sem8Major2GroupFacultyLimit !== sem8Major2GroupSafeMinimumLimit && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSem8Major2GroupFacultyLimit(sem8Major2GroupSafeMinimumLimit)}
-                                  className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                >
-                                  Use Current Maximum ({sem8Major2GroupSafeMinimumLimit})
-                                </button>
-                              )}
+                        {safeMinimumLimit !== null && safeMinimumLimit > 0 &&
+                          facultyPreferenceLimit !== originalValues.facultyPreferenceLimit && (
+                            <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
+                              <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="text-xs font-medium text-blue-800">
+                                  <strong>Current Projects:</strong> Some registered projects are using <strong>{safeMinimumLimit}</strong> faculty preferences.
+                                </p>
+                                <p className="text-xs mt-1 text-blue-700">
+                                  <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
+                                </p>
+                                {facultyPreferenceLimit !== safeMinimumLimit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFacultyPreferenceLimit(safeMinimumLimit)}
+                                    className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                  >
+                                    Use Current Maximum ({safeMinimumLimit})
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {sem8Major2GroupSafeMinimumLimit === 0 && !loadingSem8Major2GroupSafeLimit && (
+                          )}
+                        {safeMinimumLimit === 0 && !loadingSafeLimit && (
                           <p className="text-xs text-gray-500 italic">
                             No existing registrations found. You can set any value between 1-10.
                           </p>
@@ -1680,273 +1188,43 @@ const SystemConfiguration = () => {
                     <div className="md:col-span-2">
                       <input
                         type="number"
-                        min="2"
+                        min="1"
                         max="10"
-                        value={sem8Major2GroupMinMembers}
+                        value={minGroupMembers}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === '') {
-                            setSem8Major2GroupMinMembers('');
+                            setMinGroupMembers('');
                           } else {
                             const num = parseInt(val);
-                            if (!isNaN(num) && num >= 2 && num <= 10) {
-                              setSem8Major2GroupMinMembers(num);
+                            if (!isNaN(num) && num >= 1 && num <= 10) {
+                              setMinGroupMembers(num);
                             }
                           }
                         }}
                         onBlur={(e) => {
-                          if (sem8Major2GroupMinMembers === '' || sem8Major2GroupMinMembers < 2) {
-                            setSem8Major2GroupMinMembers(2);
-                          } else if (sem8Major2GroupMinMembers > 10) {
-                            setSem8Major2GroupMinMembers(10);
-                          }
-                          // Ensure min <= max
-                          if (sem8Major2GroupMinMembers > sem8Major2GroupMaxMembers) {
-                            setSem8Major2GroupMaxMembers(sem8Major2GroupMinMembers);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                        Range: 2-10 members
-                    </p>
-                  </div>
-                </div>
-
-                  {/* Max Group Members */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                        Maximum Group Members
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Maximum number of students allowed in a group
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <input
-                        type="number"
-                        min="2"
-                        max="10"
-                        value={sem8Major2GroupMaxMembers}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '') {
-                            setSem8Major2GroupMaxMembers('');
-                          } else {
-                            const num = parseInt(val);
-                            if (!isNaN(num) && num >= 2 && num <= 10) {
-                              setSem8Major2GroupMaxMembers(num);
-                            }
-                          }
-                        }}
-                        onBlur={(e) => {
-                          if (sem8Major2GroupMaxMembers === '' || sem8Major2GroupMaxMembers < 2) {
-                            setSem8Major2GroupMaxMembers(2);
-                          } else if (sem8Major2GroupMaxMembers > 10) {
-                            setSem8Major2GroupMaxMembers(10);
-                          }
-                          // Ensure min <= max
-                          if (sem8Major2GroupMaxMembers < sem8Major2GroupMinMembers) {
-                            setSem8Major2GroupMinMembers(sem8Major2GroupMaxMembers);
+                          if (minGroupMembers === '' || minGroupMembers < 1) {
+                            setMinGroupMembers(1);
+                          } else if (minGroupMembers > 10) {
+                            setMinGroupMembers(10);
                           }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        Range: 2-10 members (must be ≥ minimum)
+                        Range: 1-10 members
                       </p>
                     </div>
                   </div>
 
-                  {/* Allowed Faculty Types */}
+                  {/* Max Group Members */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-gray-700">
-                        Allowed Faculty Types
+                        Maximum Group Members
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        Select which faculty types can be chosen as preferences
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <div className="space-y-2">
-                        {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                          <label key={type} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={sem8Major2GroupAllowedFacultyTypes.includes(type)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSem8Major2GroupAllowedFacultyTypes([...sem8Major2GroupAllowedFacultyTypes, type]);
-                                } else {
-                                  setSem8Major2GroupAllowedFacultyTypes(sem8Major2GroupAllowedFacultyTypes.filter(t => t !== type));
-                                }
-                              }}
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{type}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Only selected faculty types will appear in the faculty preferences dropdown during registration.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              )}
-
-              {/* Type 1 Internship 2 Configuration Section */}
-              {sem8SubTab === 'internship2' && (
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
-                  Type 1 Internship 2 Settings
-                </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Configure settings for Semester 8 Type 1 Internship 2 (solo projects)
-                </p>
-              
-                <div className="space-y-6">
-                  {/* Faculty Preference Limit */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Faculty Preference Limit
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Number of faculty preferences required during registration
-                    </p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={sem8Internship2FacultyLimit}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          setSem8Internship2FacultyLimit('');
-                        } else {
-                          const num = parseInt(val);
-                          if (!isNaN(num) && num >= 1 && num <= 10) {
-                            setSem8Internship2FacultyLimit(num);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (sem8Internship2FacultyLimit === '' || sem8Internship2FacultyLimit < 1) {
-                          setSem8Internship2FacultyLimit(1);
-                        } else if (sem8Internship2FacultyLimit > 10) {
-                          setSem8Internship2FacultyLimit(10);
-                        }
-                      }}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                          sem8Internship2SafeMinimumLimit !== null && sem8Internship2SafeMinimumLimit > 0 && sem8Internship2FacultyLimit < sem8Internship2SafeMinimumLimit
-                            ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                            : 'border-gray-300 focus:ring-indigo-500'
-                        }`}
-                      />
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-gray-500">
-                          Range: 1-10 preferences
-                        </p>
-                        {sem8Internship2SafeMinimumLimit !== null && sem8Internship2SafeMinimumLimit > 0 && 
-                         sem8Internship2FacultyLimit !== sem8OriginalValues.internship2FacultyLimit && (
-                          <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
-                            <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div className="flex-1">
-                              <p className="text-xs font-medium text-blue-800">
-                                <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Internship2SafeMinimumLimit}</strong> faculty preferences.
-                              </p>
-                              <p className="text-xs mt-1 text-blue-700">
-                                <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
-                              </p>
-                              {sem8Internship2FacultyLimit !== sem8Internship2SafeMinimumLimit && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSem8Internship2FacultyLimit(sem8Internship2SafeMinimumLimit)}
-                                  className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                >
-                                  Use Current Maximum ({sem8Internship2SafeMinimumLimit})
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {sem8Internship2SafeMinimumLimit === 0 && !loadingSem8Internship2SafeLimit && (
-                          <p className="text-xs text-gray-500 italic">
-                            No existing registrations found. You can set any value between 1-10.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Allowed Faculty Types */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Allowed Faculty Types
-                      </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Select which faculty types can be chosen as preferences
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <div className="space-y-2">
-                        {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                          <label key={type} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={sem8Internship2AllowedFacultyTypes.includes(type)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSem8Internship2AllowedFacultyTypes([...sem8Internship2AllowedFacultyTypes, type]);
-                                } else {
-                                  setSem8Internship2AllowedFacultyTypes(sem8Internship2AllowedFacultyTypes.filter(t => t !== type));
-                                }
-                              }}
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{type}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Only selected faculty types will appear in the faculty preferences dropdown during registration.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              )}
-
-              {/* Type 2 Major Project 2 (Solo) Configuration Section */}
-              {sem8SubTab === 'major2-solo' && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="bg-green-100 text-green-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
-                  Type 2 Major Project 2 (Solo) Settings
-                </h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  Configure settings for Semester 8 Type 2 Major Project 2 solo projects
-                </p>
-              
-                <div className="space-y-6">
-                  {/* Faculty Preference Limit */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    <div className="md:col-span-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Faculty Preference Limit
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Number of faculty preferences required during registration
+                        Maximum number of students allowed in a group
                       </p>
                     </div>
                     <div className="md:col-span-2">
@@ -1954,66 +1232,30 @@ const SystemConfiguration = () => {
                         type="number"
                         min="1"
                         max="10"
-                        value={sem8Major2SoloFacultyLimit}
+                        value={maxGroupMembers}
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === '') {
-                            setSem8Major2SoloFacultyLimit('');
+                            setMaxGroupMembers('');
                           } else {
                             const num = parseInt(val);
                             if (!isNaN(num) && num >= 1 && num <= 10) {
-                              setSem8Major2SoloFacultyLimit(num);
+                              setMaxGroupMembers(num);
                             }
                           }
                         }}
                         onBlur={(e) => {
-                          if (sem8Major2SoloFacultyLimit === '' || sem8Major2SoloFacultyLimit < 1) {
-                            setSem8Major2SoloFacultyLimit(1);
-                          } else if (sem8Major2SoloFacultyLimit > 10) {
-                            setSem8Major2SoloFacultyLimit(10);
+                          if (maxGroupMembers === '' || maxGroupMembers < 1) {
+                            setMaxGroupMembers(1);
+                          } else if (maxGroupMembers > 10) {
+                            setMaxGroupMembers(10);
                           }
                         }}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                          sem8Major2SoloSafeMinimumLimit !== null && sem8Major2SoloSafeMinimumLimit > 0 && sem8Major2SoloFacultyLimit < sem8Major2SoloSafeMinimumLimit
-                            ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                            : 'border-gray-300 focus:ring-indigo-500'
-                        }`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-gray-500">
-                      Range: 1-10 preferences
-                    </p>
-                        {sem8Major2SoloSafeMinimumLimit !== null && sem8Major2SoloSafeMinimumLimit > 0 && 
-                         sem8Major2SoloFacultyLimit !== sem8OriginalValues.major2SoloFacultyLimit && (
-                          <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
-                            <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div className="flex-1">
-                              <p className="text-xs font-medium text-blue-800">
-                                <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Major2SoloSafeMinimumLimit}</strong> faculty preferences.
-                              </p>
-                              <p className="text-xs mt-1 text-blue-700">
-                                <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
-                              </p>
-                              {sem8Major2SoloFacultyLimit !== sem8Major2SoloSafeMinimumLimit && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSem8Major2SoloFacultyLimit(sem8Major2SoloSafeMinimumLimit)}
-                                  className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                >
-                                  Use Current Maximum ({sem8Major2SoloSafeMinimumLimit})
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {sem8Major2SoloSafeMinimumLimit === 0 && !loadingSem8Major2SoloSafeLimit && (
-                          <p className="text-xs text-gray-500 italic">
-                            No existing registrations found. You can set any value between 1-10.
-                          </p>
-                        )}
-                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Range: 1-10 members
+                      </p>
                     </div>
                   </div>
 
@@ -2024,38 +1266,1158 @@ const SystemConfiguration = () => {
                         Allowed Faculty Types
                       </label>
                       <p className="text-xs text-gray-500 mt-1">
-                        Select which faculty types can be chosen as preferences
+                        Select which faculty types should appear in the preferences dropdown
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Selected: {allowedFacultyTypes.length}/3 types
                       </p>
                     </div>
                     <div className="md:col-span-2">
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {['Regular', 'Adjunct', 'On Lien'].map((type) => (
-                          <label key={type} className="flex items-center">
+                          <label key={type} className="flex items-center space-x-3 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={sem8Major2SoloAllowedFacultyTypes.includes(type)}
+                              checked={allowedFacultyTypes.includes(type)}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSem8Major2SoloAllowedFacultyTypes([...sem8Major2SoloAllowedFacultyTypes, type]);
+                                  setAllowedFacultyTypes([...allowedFacultyTypes, type]);
                                 } else {
-                                  setSem8Major2SoloAllowedFacultyTypes(sem8Major2SoloAllowedFacultyTypes.filter(t => t !== type));
+                                  // Ensure at least one type is selected
+                                  if (allowedFacultyTypes.length > 1) {
+                                    setAllowedFacultyTypes(allowedFacultyTypes.filter(t => t !== type));
+                                  } else {
+                                    toast.error('At least one faculty type must be selected');
+                                  }
                                 }
                               }}
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <span className="ml-2 text-sm text-gray-700">{type}</span>
+                            <span className="text-sm text-gray-700">{type}</span>
+                            <span className={`px-2 py-1 text-xs rounded-full ${type === 'Regular' ? 'bg-green-100 text-green-800' :
+                              type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
+                                'bg-orange-100 text-orange-800'
+                              }`}>
+                              {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
+                            </span>
                           </label>
                         ))}
                       </div>
                       <p className="text-xs text-gray-500 mt-2">
                         Only selected faculty types will appear in the faculty preferences dropdown during registration.
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Allocation Deadline */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Allocation Deadline
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Deadline for faculty to respond to allocation requests
+                      </p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <input
+                        type="datetime-local"
+                        value={sem5AllocationDeadline}
+                        onChange={(e) => setSem5AllocationDeadline(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Sem 7 Configuration Section */}
+            {activeTab === 'sem7' && (
+              <div>
+                {/* Nested Sub-tabs for Sem 7 */}
+                <div className="mb-6 border-b border-gray-200">
+                  <nav className="flex -mb-px">
+                    <button
+                      onClick={() => setSem7SubTab('major1')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${sem7SubTab === 'major1'
+                        ? 'border-purple-500 text-purple-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Major Project 1
+                    </button>
+                    <button
+                      onClick={() => setSem7SubTab('internship1')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${sem7SubTab === 'internship1'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Internship 1
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Major Project 1 Configuration Section */}
+                {sem7SubTab === 'major1' && (
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 7</span>
+                      Major Project 1 Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for Semester 7 Major Project 1 (group projects)
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Major Project 1 Faculty Preference Limit */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Major Project 1 Faculty Preference Limit
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Number of faculty preferences required for Major Project 1 registration
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem7Major1FacultyLimit}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem7Major1FacultyLimit('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem7Major1FacultyLimit(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem7Major1FacultyLimit === '' || sem7Major1FacultyLimit < 1) {
+                                setSem7Major1FacultyLimit(1);
+                              } else if (sem7Major1FacultyLimit > 10) {
+                                setSem7Major1FacultyLimit(10);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${sem7Major1SafeMinimumLimit !== null && sem7Major1SafeMinimumLimit > 0 && sem7Major1FacultyLimit < sem7Major1SafeMinimumLimit
+                              ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                              : 'border-gray-300 focus:ring-indigo-500'
+                              }`}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 1-10 preferences
+                          </p>
+                          {/* Safe Minimum Limit Info */}
+                          {sem7Major1SafeMinimumLimit !== null && sem7Major1SafeMinimumLimit > 0 &&
+                            sem7Major1FacultyLimit !== sem7OriginalValues.major1FacultyLimit && (
+                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-start">
+                                  <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                  </div>
+                                  <div className="ml-3 flex-1">
+                                    <p className="text-sm text-blue-800">
+                                      <strong>Current Maximum:</strong> Some existing projects have up to <strong>{sem7Major1SafeMinimumLimit}</strong> faculty preferences.
+                                    </p>
+                                    <p className="text-xs text-blue-700 mt-1">
+                                      Changing this limit will not affect currently registered projects. They will continue to use their original preference counts.
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSem7Major1FacultyLimit(sem7Major1SafeMinimumLimit)}
+                                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                      Use Current Maximum ({sem7Major1SafeMinimumLimit})
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          {loadingSem7Major1SafeLimit && (
+                            <p className="text-xs text-gray-500 mt-1">Loading current maximum...</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Major Project 1 Min Group Members */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Major Project 1 Minimum Group Members
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Minimum number of members required in a Major Project 1 group
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem7Major1MinGroupMembers}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem7Major1MinGroupMembers('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem7Major1MinGroupMembers(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem7Major1MinGroupMembers === '' || sem7Major1MinGroupMembers < 1) {
+                                setSem7Major1MinGroupMembers(1);
+                              } else if (sem7Major1MinGroupMembers > 10) {
+                                setSem7Major1MinGroupMembers(10);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 1-10 members
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Major Project 1 Max Group Members */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Major Project 1 Maximum Group Members
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maximum number of members allowed in a Major Project 1 group
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem7Major1MaxGroupMembers}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem7Major1MaxGroupMembers('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem7Major1MaxGroupMembers(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem7Major1MaxGroupMembers === '' || sem7Major1MaxGroupMembers < 1) {
+                                setSem7Major1MaxGroupMembers(1);
+                              } else if (sem7Major1MaxGroupMembers > 10) {
+                                setSem7Major1MaxGroupMembers(10);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 1-10 members
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Major Project 1 Allowed Faculty Types */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Major Project 1 Allowed Faculty Types
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select which faculty types should appear in the preferences dropdown
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Selected: {sem7Major1AllowedFacultyTypes.length}/3 types
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="space-y-3">
+                            {['Regular', 'Adjunct', 'On Lien'].map((type) => (
+                              <label key={type} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={sem7Major1AllowedFacultyTypes.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSem7Major1AllowedFacultyTypes([...sem7Major1AllowedFacultyTypes, type]);
+                                    } else {
+                                      // Ensure at least one type is selected
+                                      if (sem7Major1AllowedFacultyTypes.length > 1) {
+                                        setSem7Major1AllowedFacultyTypes(sem7Major1AllowedFacultyTypes.filter(t => t !== type));
+                                      } else {
+                                        toast.error('At least one faculty type must be selected');
+                                      }
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{type}</span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${type === 'Regular' ? 'bg-green-100 text-green-800' :
+                                  type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-orange-100 text-orange-800'
+                                  }`}>
+                                  {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Only selected faculty types will appear in the faculty preferences dropdown during registration.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={sem7Major1AllocationDeadline}
+                            onChange={(e) => setSem7Major1AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Internship 1 Configuration Section */}
+                {sem7SubTab === 'internship1' && (
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border border-blue-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 7</span>
+                      Internship 1 Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for Semester 7 Internship 1 (solo projects)
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Internship 1 Faculty Preference Limit */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Internship 1 Faculty Preference Limit
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Number of faculty preferences required for Internship 1 (solo project) registration
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem7Internship1FacultyLimit}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem7Internship1FacultyLimit('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem7Internship1FacultyLimit(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem7Internship1FacultyLimit === '' || sem7Internship1FacultyLimit < 1) {
+                                setSem7Internship1FacultyLimit(1);
+                              } else if (sem7Internship1FacultyLimit > 10) {
+                                setSem7Internship1FacultyLimit(10);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${sem7Internship1SafeMinimumLimit !== null && sem7Internship1SafeMinimumLimit > 0 && sem7Internship1FacultyLimit < sem7Internship1SafeMinimumLimit
+                              ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                              : 'border-gray-300 focus:ring-indigo-500'
+                              }`}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 1-10 preferences
+                          </p>
+                          {/* Safe Minimum Limit Info */}
+                          {sem7Internship1SafeMinimumLimit !== null && sem7Internship1SafeMinimumLimit > 0 &&
+                            sem7Internship1FacultyLimit !== sem7OriginalValues.internship1FacultyLimit && (
+                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-start">
+                                  <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                  </div>
+                                  <div className="ml-3 flex-1">
+                                    <p className="text-sm text-blue-800">
+                                      <strong>Current Maximum:</strong> Some existing projects have up to <strong>{sem7Internship1SafeMinimumLimit}</strong> faculty preferences.
+                                    </p>
+                                    <p className="text-xs text-blue-700 mt-1">
+                                      Changing this limit will not affect currently registered projects. They will continue to use their original preference counts.
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSem7Internship1FacultyLimit(sem7Internship1SafeMinimumLimit)}
+                                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                                    >
+                                      Use Current Maximum ({sem7Internship1SafeMinimumLimit})
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          {loadingSem7Internship1SafeLimit && (
+                            <p className="text-xs text-gray-500 mt-1">Loading current maximum...</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Internship 1 Allowed Faculty Types */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Internship 1 Allowed Faculty Types
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select which faculty types should appear in the preferences dropdown
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Selected: {sem7Internship1AllowedFacultyTypes.length}/3 types
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="space-y-3">
+                            {['Regular', 'Adjunct', 'On Lien'].map((type) => (
+                              <label key={type} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={sem7Internship1AllowedFacultyTypes.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSem7Internship1AllowedFacultyTypes([...sem7Internship1AllowedFacultyTypes, type]);
+                                    } else {
+                                      // Ensure at least one type is selected
+                                      if (sem7Internship1AllowedFacultyTypes.length > 1) {
+                                        setSem7Internship1AllowedFacultyTypes(sem7Internship1AllowedFacultyTypes.filter(t => t !== type));
+                                      } else {
+                                        toast.error('At least one faculty type must be selected');
+                                      }
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{type}</span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${type === 'Regular' ? 'bg-green-100 text-green-800' :
+                                  type === 'Adjunct' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-orange-100 text-orange-800'
+                                  }`}>
+                                  {type === 'Regular' ? 'Full-time' : type === 'Adjunct' ? 'Part-time' : 'Temporary'}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Only selected faculty types will appear in the faculty preferences dropdown during registration.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={sem7Internship1AllocationDeadline}
+                            onChange={(e) => setSem7Internship1AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              )}
-            </div>
+            )}
+
+            {/* Sem 8 Configuration Section */}
+            {activeTab === 'sem8' && (
+              <div>
+                {/* Nested Sub-tabs for Sem 8 */}
+                <div className="mb-6 border-b border-gray-200">
+                  <nav className="flex -mb-px">
+                    <button
+                      onClick={() => setSem8SubTab('major2-group')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${sem8SubTab === 'major2-group'
+                        ? 'border-purple-500 text-purple-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Type 1 Major Project 2 (Group)
+                    </button>
+                    <button
+                      onClick={() => setSem8SubTab('internship2')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${sem8SubTab === 'internship2'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Type 1 Internship 2
+                    </button>
+                    <button
+                      onClick={() => setSem8SubTab('major2-solo')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${sem8SubTab === 'major2-solo'
+                        ? 'border-green-500 text-green-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Type 2 Major Project 2 (Solo)
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Type 1 Major Project 2 (Group) Configuration Section */}
+                {sem8SubTab === 'major2-group' && (
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
+                      Type 1 Major Project 2 (Group) Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for Semester 8 Type 1 Major Project 2 group projects
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Faculty Preference Limit */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Faculty Preference Limit
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Number of faculty preferences required during registration
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem8Major2GroupFacultyLimit}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem8Major2GroupFacultyLimit('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem8Major2GroupFacultyLimit(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem8Major2GroupFacultyLimit === '' || sem8Major2GroupFacultyLimit < 1) {
+                                setSem8Major2GroupFacultyLimit(1);
+                              } else if (sem8Major2GroupFacultyLimit > 10) {
+                                setSem8Major2GroupFacultyLimit(10);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${sem8Major2GroupSafeMinimumLimit !== null && sem8Major2GroupSafeMinimumLimit > 0 && sem8Major2GroupFacultyLimit < sem8Major2GroupSafeMinimumLimit
+                              ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                              : 'border-gray-300 focus:ring-indigo-500'
+                              }`}
+                          />
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-gray-500">
+                              Range: 1-10 preferences
+                            </p>
+                            {sem8Major2GroupSafeMinimumLimit !== null && sem8Major2GroupSafeMinimumLimit > 0 &&
+                              sem8Major2GroupFacultyLimit !== sem8OriginalValues.major2GroupFacultyLimit && (
+                                <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
+                                  <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium text-blue-800">
+                                      <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Major2GroupSafeMinimumLimit}</strong> faculty preferences.
+                                    </p>
+                                    <p className="text-xs mt-1 text-blue-700">
+                                      <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
+                                    </p>
+                                    {sem8Major2GroupFacultyLimit !== sem8Major2GroupSafeMinimumLimit && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSem8Major2GroupFacultyLimit(sem8Major2GroupSafeMinimumLimit)}
+                                        className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                      >
+                                        Use Current Maximum ({sem8Major2GroupSafeMinimumLimit})
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            {sem8Major2GroupSafeMinimumLimit === 0 && !loadingSem8Major2GroupSafeLimit && (
+                              <p className="text-xs text-gray-500 italic">
+                                No existing registrations found. You can set any value between 1-10.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Min Group Members */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Minimum Group Members
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Minimum number of students required in a group
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="2"
+                            max="10"
+                            value={sem8Major2GroupMinMembers}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem8Major2GroupMinMembers('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 2 && num <= 10) {
+                                  setSem8Major2GroupMinMembers(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem8Major2GroupMinMembers === '' || sem8Major2GroupMinMembers < 2) {
+                                setSem8Major2GroupMinMembers(2);
+                              } else if (sem8Major2GroupMinMembers > 10) {
+                                setSem8Major2GroupMinMembers(10);
+                              }
+                              // Ensure min <= max
+                              if (sem8Major2GroupMinMembers > sem8Major2GroupMaxMembers) {
+                                setSem8Major2GroupMaxMembers(sem8Major2GroupMinMembers);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 2-10 members
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Max Group Members */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Maximum Group Members
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maximum number of students allowed in a group
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="2"
+                            max="10"
+                            value={sem8Major2GroupMaxMembers}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem8Major2GroupMaxMembers('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 2 && num <= 10) {
+                                  setSem8Major2GroupMaxMembers(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem8Major2GroupMaxMembers === '' || sem8Major2GroupMaxMembers < 2) {
+                                setSem8Major2GroupMaxMembers(2);
+                              } else if (sem8Major2GroupMaxMembers > 10) {
+                                setSem8Major2GroupMaxMembers(10);
+                              }
+                              // Ensure min <= max
+                              if (sem8Major2GroupMaxMembers < sem8Major2GroupMinMembers) {
+                                setSem8Major2GroupMinMembers(sem8Major2GroupMaxMembers);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Range: 2-10 members (must be ≥ minimum)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Allowed Faculty Types */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allowed Faculty Types
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select which faculty types can be chosen as preferences
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="space-y-2">
+                            {['Regular', 'Adjunct', 'On Lien'].map((type) => (
+                              <label key={type} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={sem8Major2GroupAllowedFacultyTypes.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSem8Major2GroupAllowedFacultyTypes([...sem8Major2GroupAllowedFacultyTypes, type]);
+                                    } else {
+                                      setSem8Major2GroupAllowedFacultyTypes(sem8Major2GroupAllowedFacultyTypes.filter(t => t !== type));
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{type}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Only selected faculty types will appear in the faculty preferences dropdown during registration.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={sem8Major2AllocationDeadline}
+                            onChange={(e) => setSem8Major2AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Type 1 Internship 2 Configuration Section */}
+                {sem8SubTab === 'internship2' && (
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6 border border-blue-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
+                      Type 1 Internship 2 Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for Semester 8 Type 1 Internship 2 (solo projects)
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Faculty Preference Limit */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Faculty Preference Limit
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Number of faculty preferences required during registration
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem8Internship2FacultyLimit}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem8Internship2FacultyLimit('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem8Internship2FacultyLimit(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem8Internship2FacultyLimit === '' || sem8Internship2FacultyLimit < 1) {
+                                setSem8Internship2FacultyLimit(1);
+                              } else if (sem8Internship2FacultyLimit > 10) {
+                                setSem8Internship2FacultyLimit(10);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${sem8Internship2SafeMinimumLimit !== null && sem8Internship2SafeMinimumLimit > 0 && sem8Internship2FacultyLimit < sem8Internship2SafeMinimumLimit
+                              ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                              : 'border-gray-300 focus:ring-indigo-500'
+                              }`}
+                          />
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-gray-500">
+                              Range: 1-10 preferences
+                            </p>
+                            {sem8Internship2SafeMinimumLimit !== null && sem8Internship2SafeMinimumLimit > 0 &&
+                              sem8Internship2FacultyLimit !== sem8OriginalValues.internship2FacultyLimit && (
+                                <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
+                                  <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium text-blue-800">
+                                      <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Internship2SafeMinimumLimit}</strong> faculty preferences.
+                                    </p>
+                                    <p className="text-xs mt-1 text-blue-700">
+                                      <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
+                                    </p>
+                                    {sem8Internship2FacultyLimit !== sem8Internship2SafeMinimumLimit && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSem8Internship2FacultyLimit(sem8Internship2SafeMinimumLimit)}
+                                        className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                      >
+                                        Use Current Maximum ({sem8Internship2SafeMinimumLimit})
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            {sem8Internship2SafeMinimumLimit === 0 && !loadingSem8Internship2SafeLimit && (
+                              <p className="text-xs text-gray-500 italic">
+                                No existing registrations found. You can set any value between 1-10.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Allowed Faculty Types */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allowed Faculty Types
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select which faculty types can be chosen as preferences
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="space-y-2">
+                            {['Regular', 'Adjunct', 'On Lien'].map((type) => (
+                              <label key={type} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={sem8Internship2AllowedFacultyTypes.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSem8Internship2AllowedFacultyTypes([...sem8Internship2AllowedFacultyTypes, type]);
+                                    } else {
+                                      setSem8Internship2AllowedFacultyTypes(sem8Internship2AllowedFacultyTypes.filter(t => t !== type));
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{type}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Only selected faculty types will appear in the faculty preferences dropdown during registration.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={sem8Internship2AllocationDeadline}
+                            onChange={(e) => setSem8Internship2AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Type 2 Major Project 2 (Solo) Configuration Section */}
+                {sem8SubTab === 'major2-solo' && (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-green-100 text-green-600 px-3 py-1 rounded mr-2 text-sm font-medium">Sem 8</span>
+                      Type 2 Major Project 2 (Solo) Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for Semester 8 Type 2 Major Project 2 solo projects
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Faculty Preference Limit */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Faculty Preference Limit
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Number of faculty preferences required during registration
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={sem8Major2SoloFacultyLimit}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') {
+                                setSem8Major2SoloFacultyLimit('');
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1 && num <= 10) {
+                                  setSem8Major2SoloFacultyLimit(num);
+                                }
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (sem8Major2SoloFacultyLimit === '' || sem8Major2SoloFacultyLimit < 1) {
+                                setSem8Major2SoloFacultyLimit(1);
+                              } else if (sem8Major2SoloFacultyLimit > 10) {
+                                setSem8Major2SoloFacultyLimit(10);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${sem8Major2SoloSafeMinimumLimit !== null && sem8Major2SoloSafeMinimumLimit > 0 && sem8Major2SoloFacultyLimit < sem8Major2SoloSafeMinimumLimit
+                              ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                              : 'border-gray-300 focus:ring-indigo-500'
+                              }`}
+                          />
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-gray-500">
+                              Range: 1-10 preferences
+                            </p>
+                            {sem8Major2SoloSafeMinimumLimit !== null && sem8Major2SoloSafeMinimumLimit > 0 &&
+                              sem8Major2SoloFacultyLimit !== sem8OriginalValues.major2SoloFacultyLimit && (
+                                <div className="flex items-start space-x-2 p-2 rounded-md bg-blue-50 border border-blue-200">
+                                  <svg className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium text-blue-800">
+                                      <strong>Current Projects:</strong> Some registered projects are using <strong>{sem8Major2SoloSafeMinimumLimit}</strong> faculty preferences.
+                                    </p>
+                                    <p className="text-xs mt-1 text-blue-700">
+                                      <strong>This will not affect currently registered projects</strong> - they will keep their original preference counts. Only new registrations will be required to use the new limit.
+                                    </p>
+                                    {sem8Major2SoloFacultyLimit !== sem8Major2SoloSafeMinimumLimit && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSem8Major2SoloFacultyLimit(sem8Major2SoloSafeMinimumLimit)}
+                                        className="mt-2 text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                      >
+                                        Use Current Maximum ({sem8Major2SoloSafeMinimumLimit})
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            {sem8Major2SoloSafeMinimumLimit === 0 && !loadingSem8Major2SoloSafeLimit && (
+                              <p className="text-xs text-gray-500 italic">
+                                No existing registrations found. You can set any value between 1-10.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Allowed Faculty Types */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allowed Faculty Types
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Select which faculty types can be chosen as preferences
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="space-y-2">
+                            {['Regular', 'Adjunct', 'On Lien'].map((type) => (
+                              <label key={type} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={sem8Major2SoloAllowedFacultyTypes.includes(type)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSem8Major2SoloAllowedFacultyTypes([...sem8Major2SoloAllowedFacultyTypes, type]);
+                                    } else {
+                                      setSem8Major2SoloAllowedFacultyTypes(sem8Major2SoloAllowedFacultyTypes.filter(t => t !== type));
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <span className="ml-2 text-sm text-gray-700">{type}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Only selected faculty types will appear in the faculty preferences dropdown during registration.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* MTech Configuration Section */}
+            {activeTab === 'mtech' && (
+              <div>
+                {/* Nested Sub-tabs for MTech */}
+                <div className="mb-6 border-b border-gray-200">
+                  <nav className="flex -mb-px">
+                    <button
+                      onClick={() => setMtechSubTab('sem3')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${mtechSubTab === 'sem3'
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Semester 3
+                    </button>
+                    <button
+                      onClick={() => setMtechSubTab('sem4')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${mtechSubTab === 'sem4'
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      Semester 4
+                    </button>
+                  </nav>
+                </div>
+
+                {/* MTech Sem 3 Configuration Section */}
+                {mtechSubTab === 'sem3' && (
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6 border border-indigo-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded mr-2 text-sm font-medium">M.Tech Sem 3</span>
+                      Major Project 1 Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for M.Tech Semester 3 Major Project 1
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={mtechSem3AllocationDeadline}
+                            onChange={(e) => setMtechSem3AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MTech Sem 4 Configuration Section */}
+                {mtechSubTab === 'sem4' && (
+                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6 border border-indigo-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded mr-2 text-sm font-medium">M.Tech Sem 4</span>
+                      Major Project 2 Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure settings for M.Tech Semester 4 Major Project 2
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Allocation Deadline */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Allocation Deadline
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline for faculty to respond to allocation requests
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <input
+                            type="datetime-local"
+                            value={mtechSem4AllocationDeadline}
+                            onChange={(e) => setMtechSem4AllocationDeadline(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Action Buttons */}
@@ -2120,44 +2482,44 @@ const SystemConfiguration = () => {
           <div className="space-y-2">
             {(() => {
               let configsToShow = [];
-              
+
               if (activeTab === 'sem5') {
                 // Sem 5: Show all configs except Window configs
                 configsToShow = configs.filter(config => !config.configKey.includes('Window'));
               } else if (activeTab === 'sem7') {
                 // Sem 7: Show configs for active subtab
                 if (sem7SubTab === 'major1') {
-                  configsToShow = sem7Configs.filter(config => 
+                  configsToShow = sem7Configs.filter(config =>
                     config.configKey.includes('sem7.major1') && !config.configKey.includes('Window')
                   );
                 } else {
-                  configsToShow = sem7Configs.filter(config => 
+                  configsToShow = sem7Configs.filter(config =>
                     config.configKey.includes('sem7.internship1') && !config.configKey.includes('Window')
                   );
                 }
               } else if (activeTab === 'sem8') {
                 // Sem 8: Show configs for active subtab
                 if (sem8SubTab === 'major2-group') {
-                  configsToShow = sem8Configs.filter(config => 
+                  configsToShow = sem8Configs.filter(config =>
                     config.configKey.includes('sem8.major2.group') && !config.configKey.includes('Window')
                   );
                 } else if (sem8SubTab === 'internship2') {
-                  configsToShow = sem8Configs.filter(config => 
+                  configsToShow = sem8Configs.filter(config =>
                     config.configKey.includes('sem8.internship2') && !config.configKey.includes('Window')
                   );
                 } else {
-                  configsToShow = sem8Configs.filter(config => 
+                  configsToShow = sem8Configs.filter(config =>
                     config.configKey.includes('sem8.major2.solo') && !config.configKey.includes('Window')
                   );
                 }
               }
-              
+
               if (configsToShow.length === 0) {
                 return (
                   <p className="text-sm text-gray-500 text-center py-4">No configurations to display</p>
                 );
               }
-              
+
               return configsToShow.map((config) => (
                 <div key={config._id} className="flex justify-between items-center py-2 border-b border-gray-100">
                   <div className="flex-1">
@@ -2165,7 +2527,7 @@ const SystemConfiguration = () => {
                     <p className="text-xs text-gray-500">{config.description}</p>
                   </div>
                   <div className="text-sm font-mono bg-gray-100 px-3 py-1 rounded ml-4">
-                    {typeof config.configValue === 'object' 
+                    {typeof config.configValue === 'object'
                       ? JSON.stringify(config.configValue).replace(/"/g, '').replace(/,/g, ', ')
                       : String(config.configValue)}
                   </div>
@@ -2225,6 +2587,7 @@ const SystemConfiguration = () => {
                           <li>Min Group Members: {originalValues.minGroupMembers || 4} → <strong>{minGroupMembers}</strong></li>
                           <li>Max Group Members: {originalValues.maxGroupMembers || 5} → <strong>{maxGroupMembers}</strong></li>
                           <li>Allowed Faculty Types: {originalValues.allowedFacultyTypes?.join(', ') || 'Regular, Adjunct, On Lien'} → <strong>{allowedFacultyTypes.join(', ')}</strong></li>
+                          <li>Allocation Deadline: {originalValues.allocationDeadline ? new Date(originalValues.allocationDeadline).toLocaleString() : 'Not set'} → <strong>{sem5AllocationDeadline ? new Date(sem5AllocationDeadline).toLocaleString() : 'Not set'}</strong></li>
                         </>
                       ) : (
                         <>
@@ -2303,12 +2666,12 @@ const SystemConfiguration = () => {
                   </div>
                 </div>
               )}
-              
+
               <p className="text-sm text-gray-700 mb-4">
                 You're trying to set the limit to <strong>{warningData?.newLimit}</strong>, but{' '}
                 <strong>{warningData?.affectedCount}</strong> existing project registration(s) have more preferences than this limit.
               </p>
-              
+
               <div className="bg-gray-50 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto">
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">Affected Projects ({warningData?.affectedProjects?.length || 0}):</h4>
                 <ul className="space-y-2">
@@ -2327,11 +2690,11 @@ const SystemConfiguration = () => {
                   )}
                 </ul>
               </div>
-              
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                 <p className="text-sm text-yellow-800">
                   <strong>Note:</strong> {warningData?.suggestion || 'If you proceed, existing projects will keep their original preference count, but new registrations will be limited to the new value.'}
-              </p>
+                </p>
               </div>
             </div>
             <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
